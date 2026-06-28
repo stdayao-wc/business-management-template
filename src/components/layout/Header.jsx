@@ -1,13 +1,9 @@
 export default function Header() {
   return (
-    <header
-      style={{
-        backgroundColor: "#1f2937",
-        color: "white",
-        padding: "1rem 2rem",
-      }}
-    >
-      <h2>Company Logo / Name Here</h2>
+    <header className="bg-slate-800 py-5">
+      <h1 className="text-center text-2xl font-bold text-white">
+        Company Logo / Name Here
+      </h1>
     </header>
   );
 }
