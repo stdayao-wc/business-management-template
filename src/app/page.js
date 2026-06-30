@@ -1,20 +1,17 @@
-import SideNavbar from "@/components/layout/SideNavbar";
+import AppLayout from "@/components/layout/AppLayout";
+
 import navigation from "./config/navigation";
 import themes from "./config/theme";
+import layout from "./config/layout";
 
 export default function Home() {
-  const theme = themes.light;
-
   return (
-    <div className="flex">
-      <SideNavbar
-        links={navigation}
-        theme={theme.sidebar}
-      />
-
-      <main className="flex-1 p-8">
-        <h1>Dashboard</h1>
-      </main>
-    </div>
+    <AppLayout
+      navigation={navigation}
+      theme={themes.light}
+      layout={layout}
+    >
+      <h1>Dashboard</h1>
+    </AppLayout>
   );
 }

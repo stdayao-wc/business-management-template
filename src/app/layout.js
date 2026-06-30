@@ -1,5 +1,4 @@
 import "./globals.css";
-import Header from "@/components/layout/Header";
 
 export const metadata = {
   title: "Business Management Template",
@@ -9,10 +8,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
-        <Header />
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
