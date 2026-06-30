@@ -21,7 +21,7 @@ const navigation = [
     },
     {
       label: "Reports",
-      href: "/shipping",
+      href: "/reports",
       icon: "/icons/reports.png"
     }
 ];
