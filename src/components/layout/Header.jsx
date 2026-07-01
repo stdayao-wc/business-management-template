@@ -1,9 +1,78 @@
-export default function Header() {
+"use client";
+
+import HamburgerButton from "./header/HamburgerButton";
+import Logo from "./header/Logo";
+import SearchBar from "./header/SearchBar";
+import Notifications from "./header/Notifications";
+import ProfileMenu from "./header/ProfileMenu";
+
+export default function Header({
+  onToggleSidebar,
+
+  logo = {
+    href: "/",
+    src: "/logo.png",
+    alt: "Company Logo",
+    title: "Company",
+  },
+
+  search = {
+    value: "",
+    placeholder: "Search...",
+    onChange: () => {},
+    onSearch: () => {},
+  },
+
+  notifications = {
+    count: 0,
+    onClick: () => {},
+  },
+
+  profile = {
+    name: "User",
+    role: "",
+    avatar: "",
+    onClick: () => {},
+  },
+}) {
   return (
-    <header className="bg-slate-800 py-5">
-      <h1 className="text-center text-2xl font-bold text-white">
-        Company Logo / Name Here
-      </h1>
+    <header className="sticky top-0 z-50 bg-white shadow-sm">
+      <div className="flex h-20 items-center px-8">
+        {/* Left */}
+        <div className="flex flex-1 items-center gap-4">
+          <HamburgerButton onClick={onToggleSidebar} />
+
+          <Logo
+            href={logo.href}
+            src={logo.src}
+            alt={logo.alt}
+            title={logo.title}
+          />
+        </div>
+
+        {/* Center */}
+        <div className="flex flex-[2] justify-center px-8">
+          <SearchBar
+            placeholder="Search..."
+            onSearch={(text) => console.log(text)}
+          />
+        </div>
+
+        {/* Right */}
+        <div className="flex flex-1 items-center justify-end gap-4">
+          <Notifications
+            count={notifications.count}
+            onClick={notifications.onClick}
+          />
+
+          <ProfileMenu
+            name={profile.name}
+            role={profile.role}
+            avatar={profile.avatar}
+            onClick={profile.onClick}
+          />
+        </div>
+      </div>
     </header>
   );
 }
