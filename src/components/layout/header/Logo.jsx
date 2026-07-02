@@ -5,9 +5,8 @@ export default function Logo({
   href = "/",
   src,
   alt = "Company Logo",
-  title = "Company",
-  imageWidth = 40,
-  imageHeight = 40,
+  imageWidth = 180,
+  imageHeight = 50,
 }) {
   return (
     <Link
@@ -15,7 +14,6 @@ export default function Logo({
       className="
         inline-flex
         items-center
-        gap-3
         rounded-lg
         px-2
         py-2
@@ -32,8 +30,6 @@ export default function Logo({
           priority
         />
       )}
-
-      <span className="text-xl font-bold whitespace-nowrap">{title}</span>
     </Link>
   );
 }

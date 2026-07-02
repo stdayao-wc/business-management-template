@@ -5,16 +5,10 @@ import Logo from "./header/Logo";
 import SearchBar from "./header/SearchBar";
 import Notifications from "./header/Notifications";
 import ProfileMenu from "./header/ProfileMenu";
+import app from "@/app/config/app";
 
 export default function Header({
   onToggleSidebar,
-
-  logo = {
-    href: "/",
-    src: "/logo.png",
-    alt: "Company Logo",
-    title: "Company",
-  },
 
   search = {
     value: "",
@@ -43,11 +37,13 @@ export default function Header({
           <HamburgerButton onClick={onToggleSidebar} />
 
           <Logo
-            href={logo.href}
-            src={logo.src}
-            alt={logo.alt}
-            title={logo.title}
-          />
+            href={app.home}
+            src={app.logo.src}
+            alt={app.logo.alt}
+            title={app.name}
+            imageWidth={app.logo.width}
+            imageHeight={app.logo.height}
+        />
         </div>
 
         {/* Center */}
