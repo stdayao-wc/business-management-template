@@ -32,22 +32,24 @@ export default function ItemCard({
         />
       </div>
 
-      <h2 className="text-xl font-semibold">
-        {name}
-      </h2>
+      <div className="flex flex-col items-center text-center flex-grow">
+        <h2 className="text-xl font-semibold">
+          {name}
+        </h2>
 
-      <p className="mt-1 text-sm text-gray-500">
-        {code}
-      </p>
+        <p className="mt-1 text-sm text-gray-500">
+          {code}
+        </p>
 
-      <p className="mt-4 flex-grow text-gray-600">
-        {description}
-      </p>
+        <p className="mt-4 text-gray-600">
+          {description}
+        </p>
 
-      <div className="mt-6 flex items-center justify-between">
-        {status}
+        <div className="mt-6 flex flex-col items-center gap-3">
+          {status}
 
-        {children}
+          {children}
+        </div>
       </div>
     </div>
   );
