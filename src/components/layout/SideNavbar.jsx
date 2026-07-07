@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 export default function SideNavbar({
   links = [],
@@ -10,17 +13,19 @@ export default function SideNavbar({
       navigation: {
         width: "14rem",
         topPadding: "4rem",
-        iconSize: 28,
+        iconSize: 32,
         iconContainerWidth: "2.5rem",
-        fontSize: "text-xl",
+        fontSize: "text-2xl",
         fontWeight: "font-semibold",
       },
     },
   },
 }) {
+  const pathname = usePathname();
+
   return (
     <aside
-      className="min-h-screen"
+      className="min-h-screen flex flex-col"
       style={{
         width: layout.sidebar.width,
 
@@ -33,53 +38,66 @@ export default function SideNavbar({
       }}
     >
       <nav
-        className="mx-auto"
+        className="w-full"
         style={{
-          width: layout.sidebar.navigation.width,
           paddingTop: layout.sidebar.navigation.topPadding,
         }}
       >
-        <ul className="space-y-3">
-          {links.map((link) => (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                className="
-                  flex
-                  items-center
-                  rounded-lg
-                  px-4
-                  py-3
-                  text-[color:var(--sidebar-text)]
-                  hover:bg-[var(--sidebar-hover)]
-                  transition-colors
-                  duration-200
-                "
-              >
-                <div
-                  className="flex justify-center shrink-0"
-                  style={{
-                    width: layout.sidebar.navigation.iconContainerWidth,
-                  }}
-                >
-                  {link.icon && (
-                    <Image
-                      src={link.icon}
-                      alt={link.label}
-                      width={layout.sidebar.navigation.iconSize}
-                      height={layout.sidebar.navigation.iconSize}
-                    />
-                  )}
-                </div>
+        <ul
+          className="mx-auto space-y-3"
+          style={{
+            width: layout.sidebar.navigation.width,
+          }}
+        >
+          {links.map((link) => {
+            const isActive = pathname === link.href;
 
-                <span
-                  className={`${layout.sidebar.navigation.fontSize} ${layout.sidebar.navigation.fontWeight} ml-4`}
+            return (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className={`
+                    flex
+                    w-full
+                    items-center
+                    rounded-lg
+                    px-4
+                    py-3
+                    text-[color:var(--sidebar-text)]
+                    transition-colors
+                    duration-200
+                    ${
+                      isActive
+                        ? "bg-[var(--sidebar-hover)]"
+                        : "hover:bg-[var(--sidebar-hover)]"
+                    }
+                  `}
                 >
-                  {link.label}
-                </span>
-              </Link>
-            </li>
-          ))}
+                  <div
+                    className="flex shrink-0 justify-center"
+                    style={{
+                      width: layout.sidebar.navigation.iconContainerWidth,
+                    }}
+                  >
+                    {link.icon && (
+                      <Image
+                        src={link.icon}
+                        alt={link.label}
+                        width={layout.sidebar.navigation.iconSize}
+                        height={layout.sidebar.navigation.iconSize}
+                      />
+                    )}
+                  </div>
+
+                  <span
+                    className={`${layout.sidebar.navigation.fontSize} ${layout.sidebar.navigation.fontWeight} ml-5`}
+                  >
+                    {link.label}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       </nav>
     </aside>

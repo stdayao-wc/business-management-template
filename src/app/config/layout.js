@@ -1,16 +1,16 @@
 const layout = {
   sidebar: {
-    width: "16rem",
+    width: "w-64",
 
     navigation: {
-      width: "14rem",
-      topPadding: "4rem",
+      width: "w-56",
+      topPadding: "pt-16",
 
-      iconSize: 28,
-      iconContainerWidth: "2.5rem",
-
-      fontSize: "text-xl",
+      fontSize: "text-2xl",
       fontWeight: "font-semibold",
+
+      iconSize: 32,
+      iconContainerWidth: "w-10",
     },
   },
 };
