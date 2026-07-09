@@ -4,16 +4,17 @@ import StatusPill from "@/components/inventory/StatusPill";
 
 export default function InventoryPage() {
   return (
-    <div>
+    <div className="space-y-10">
       {/* Inventory Header */}
       <div
         className="
-            rounded-xl
-            bg-white
-            px-10
-            py-8
-            shadow-sm
-        "
+      rounded-xl
+      bg-white
+      px-10
+      py-8
+      shadow-sm
+      mb-10
+    "
         >
         {/* <div> Add Padding Here so there is padding around these text elements */}
             <h1 className="text-4xl font-bold">
