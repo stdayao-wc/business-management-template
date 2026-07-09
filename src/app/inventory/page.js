@@ -15,23 +15,25 @@ export default function InventoryPage() {
             shadow-sm
         "
         >
-        <h1 className="text-4xl font-bold">
-          Products
-        </h1>
+        {/* <div> Add Padding Here so there is padding around these text elements */}
+            <h1 className="text-4xl font-bold">
+            Products
+            </h1>
 
-        <div className="mt-6 flex gap-4">
-          <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
-            All
-          </button>
+            <div className="mt-6 flex gap-4">
+            <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
+                All
+            </button>
 
-          <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
-            Beverages
-          </button>
+            <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
+                Beverages
+            </button>
 
-          <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
-            Food
-          </button>
-        </div>
+            <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
+                Food
+            </button>
+            </div>
+        {/* </div> Add Padding Here so there is padding around these text elements */}
       </div>
 
       {/* Product Grid */}
