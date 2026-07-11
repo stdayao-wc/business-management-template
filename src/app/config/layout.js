@@ -1,6 +1,7 @@
 const layout = {
   sidebar: {
-    width: "w-64",
+    expandedWidth: "w-64",
+    collapsedWidth: "w-20",
 
     navigation: {
       width: "w-56",

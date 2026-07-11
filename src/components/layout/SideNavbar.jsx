@@ -3,15 +3,19 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useLayout } from "@/context/LayoutContext";
 
 export default function SideNavbar({
   links = [],
   theme,
   layout = {
     sidebar: {
-      width: "16rem",
+      expandedWidth: "16rem",
+      collapsedWidth: "5rem",
       navigation: {
-        width: "14rem",
+        width: collapsed
+          ? layout.sidebar.collapsedWidth
+          : layout.sidebar.expandedWidth,
         topPadding: "4rem",
         iconSize: 32,
         iconContainerWidth: "2.5rem",
@@ -22,19 +26,25 @@ export default function SideNavbar({
   },
 }) {
   const pathname = usePathname();
+  const { sidebarMode } = useLayout();
+
+  const collapsed = sidebarMode === "collapsed";
 
   return (
     <aside
-      className="
-    sticky
-    top-20
-    h-[calc(100vh-5rem)]
-    flex
-    flex-col
-  "
+      className={`
+      sticky
+      top-20
+      h-[calc(100vh-5rem)]
+      flex
+      flex-col
+      transition-all
+      duration-300
+      ${
+        collapsed ? layout.sidebar.collapsedWidth : layout.sidebar.expandedWidth
+      }
+    `}
       style={{
-        width: layout.sidebar.width,
-
         "--sidebar-bg": theme.background,
         "--sidebar-text": theme.text,
         "--sidebar-hover": theme.hover,
@@ -50,10 +60,11 @@ export default function SideNavbar({
         }}
       >
         <ul
-          className="mx-auto space-y-3"
-          style={{
-            width: layout.sidebar.navigation.width,
-          }}
+          className={`
+            mx-auto
+            space-y-3
+            ${collapsed ? "w-full px-2" : layout.sidebar.navigation.width}
+          `}
         >
           {links.map((link) => {
             const isActive = pathname === link.href;
@@ -67,16 +78,12 @@ export default function SideNavbar({
                     w-full
                     items-center
                     rounded-lg
-                    px-4
                     py-3
+                    transition-all
+                    duration-300
                     text-[color:var(--sidebar-text)]
-                    transition-colors
-                    duration-200
-                    ${
-                      isActive
-                        ? "bg-[var(--sidebar-hover)]"
-                        : "hover:bg-[var(--sidebar-hover)]"
-                    }
+                    ${collapsed ? "justify-center px-0" : "px-4"}
+                    ${isActive ? "bg-[var(--sidebar-hover)]" : "hover:bg-[var(--sidebar-hover)]"}
                   `}
                 >
                   <div
@@ -95,11 +102,17 @@ export default function SideNavbar({
                     )}
                   </div>
 
-                  <span
-                    className={`${layout.sidebar.navigation.fontSize} ${layout.sidebar.navigation.fontWeight} ml-5`}
-                  >
-                    {link.label}
-                  </span>
+                  {!collapsed && (
+                    <span
+                      className={`
+                        ${layout.sidebar.navigation.fontSize}
+                        ${layout.sidebar.navigation.fontWeight}
+                        ml-5
+                      `}
+                    >
+                      {link.label}
+                    </span>
+                  )}
                 </Link>
               </li>
             );

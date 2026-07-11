@@ -5,6 +5,7 @@ import AppLayout from "@/components/layout/AppLayout";
 import navigation from "./config/navigation";
 import themes from "./config/theme";
 import layout from "./config/layout";
+import { LayoutProvider } from "@/context/LayoutContext";
 
 export const metadata = {
   title: "Business Management Template",
@@ -15,13 +16,15 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <AppLayout
-          navigation={navigation}
-          theme={themes.light}
-          layout={layout}
-        >
-          {children}
-        </AppLayout>
+        <LayoutProvider>
+          <AppLayout
+            navigation={navigation}
+            theme={themes.light}
+            layout={layout}
+          >
+            {children}
+          </AppLayout>
+        </LayoutProvider>
       </body>
     </html>
   );

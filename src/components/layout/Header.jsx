@@ -6,10 +6,9 @@ import SearchBar from "./header/SearchBar";
 import Notifications from "./header/Notifications";
 import ProfileMenu from "./header/ProfileMenu";
 import app from "@/app/config/app";
+import { useLayout } from "@/context/LayoutContext";
 
 export default function Header({
-  onToggleSidebar,
-
   search = {
     value: "",
     placeholder: "Search...",
@@ -29,12 +28,13 @@ export default function Header({
     onClick: () => {},
   },
 }) {
+  const { toggleSidebar } = useLayout();
   return (
     <header className="sticky top-0 z-50 bg-white shadow-sm">
       <div className="flex h-20 items-center px-8">
         {/* Left */}
         <div className="flex flex-1 items-center gap-4">
-          <HamburgerButton onClick={onToggleSidebar} />
+          <HamburgerButton onClick={toggleSidebar} />
 
           <Logo
             href={app.home}
@@ -43,7 +43,7 @@ export default function Header({
             title={app.name}
             imageWidth={app.logo.width}
             imageHeight={app.logo.height}
-        />
+          />
         </div>
 
         {/* Center */}
