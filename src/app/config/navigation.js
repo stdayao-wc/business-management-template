@@ -23,7 +23,10 @@ const navigation = [
       label: "Reports",
       href: "/reports",
       icon: "/icons/reports.png"
-    }
+    },
+    
+
+    
 ];
 
 export default navigation;

@@ -25,7 +25,13 @@ export default function SideNavbar({
 
   return (
     <aside
-      className="min-h-screen flex flex-col"
+      className="
+    sticky
+    top-20
+    h-[calc(100vh-5rem)]
+    flex
+    flex-col
+  "
       style={{
         width: layout.sidebar.width,
 
@@ -38,7 +44,7 @@ export default function SideNavbar({
       }}
     >
       <nav
-        className="w-full"
+        className="flex-1 overflow-y-auto"
         style={{
           paddingTop: layout.sidebar.navigation.topPadding,
         }}
