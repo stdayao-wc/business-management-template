@@ -73,6 +73,7 @@ export default function SideNavbar({
               <li key={link.href}>
                 <Link
                   href={link.href}
+                  title={collapsed ? link.label : undefined}
                   className={`
                     flex
                     w-full
@@ -82,12 +83,21 @@ export default function SideNavbar({
                     transition-all
                     duration-300
                     text-[color:var(--sidebar-text)]
-                    ${collapsed ? "justify-center px-0" : "px-4"}
+                    ${collapsed ? "justify-center px-2" : "px-4"}
                     ${isActive ? "bg-[var(--sidebar-hover)]" : "hover:bg-[var(--sidebar-hover)]"}
+                    select-none
+                    cursor-pointer
                   `}
                 >
                   <div
-                    className="flex shrink-0 justify-center"
+                    className={`
+                      flex
+                      shrink-0
+                      justify-center
+                      transition-all
+                      duration-300
+                      ${collapsed ? "w-full" : layout.sidebar.navigation.iconContainerWidth}
+                    `}
                     style={{
                       width: layout.sidebar.navigation.iconContainerWidth,
                     }}
@@ -102,17 +112,19 @@ export default function SideNavbar({
                     )}
                   </div>
 
-                  {!collapsed && (
-                    <span
-                      className={`
-                        ${layout.sidebar.navigation.fontSize}
-                        ${layout.sidebar.navigation.fontWeight}
-                        ml-5
-                      `}
-                    >
-                      {link.label}
-                    </span>
-                  )}
+                  <span
+                    className={`
+                      overflow-hidden
+                      whitespace-nowrap
+                      transition-all
+                      duration-300
+                      ${layout.sidebar.navigation.fontSize}
+                      ${layout.sidebar.navigation.fontWeight}
+                      ${collapsed ? "ml-0 w-0 opacity-0" : "ml-5 w-auto opacity-100"}
+                    `}
+                  >
+                    {link.label}
+                  </span>
                 </Link>
               </li>
             );
