@@ -5,59 +5,108 @@ import DashboardSection from "@/components/dashboard/DashboardSection";
 import DashboardStatCard from "@/components/dashboard/DashboardStatCard";
 import DashboardStatsGrid from "@/components/dashboard/DashboardStatsGrid";
 
+import SalesChart from "@/components/dashboard/SalesChart";
+
 export default function Home() {
-  return (
-    <>
-      <DashboardHeader
-        title="Dashboard"
-        subtitle="Welcome back."
-      />
+    return (
+        <>
+            <DashboardHeader
+                title="Dashboard"
+                subtitle="Welcome back! Here's an overview of your business."
+            />
 
-      <DashboardSection>
-        <DashboardStatsGrid>
-          <DashboardStatCard
-            title="Products"
-            value="328"
-            subtitle="+12 this month"
-          />
+            {/* Statistics */}
+            <DashboardSection>
+                <DashboardStatsGrid>
+                    <DashboardStatCard
+                        title="📦 Products"
+                        value="328"
+                        subtitle="+12 added this month"
+                    />
 
-          <DashboardStatCard
-            title="Orders"
-            value="82"
-            subtitle="+8 today"
-          />
+                    <DashboardStatCard
+                        title="🛒 Orders Today"
+                        value="82"
+                        subtitle="+8 since yesterday"
+                    />
 
-          <DashboardStatCard
-            title="Revenue"
-            value="₱125,430"
-            subtitle="+15%"
-          />
+                    <DashboardStatCard
+                        title="💰 Revenue"
+                        value="₱125,430"
+                        subtitle="+15% from last month"
+                    />
 
-          <DashboardStatCard
-            title="Customers"
-            value="1,240"
-            subtitle="+42"
-          />
-        </DashboardStatsGrid>
-      </DashboardSection>
+                    <DashboardStatCard
+                        title="👥 Customers"
+                        value="1,240"
+                        subtitle="+42 new customers"
+                    />
+                </DashboardStatsGrid>
+            </DashboardSection>
 
-      <DashboardSection>
-        <DashboardChartCard title="Monthly Sales">
-          <div className="flex h-72 items-center justify-center rounded-lg bg-gray-100">
-            Chart Placeholder
-          </div>
-        </DashboardChartCard>
-      </DashboardSection>
+            {/* Sales Chart + Activity */}
+            <DashboardSection>
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
 
-      <DashboardSection>
-        <DashboardActivityCard title="Recent Activity">
-          <div className="space-y-3">
-            <p>John added Coca-Cola 1.5L</p>
-            <p>Mary updated Coffee Beans</p>
-            <p>Purchase Order #421 was created</p>
-          </div>
-        </DashboardActivityCard>
-      </DashboardSection>
-    </>
-  );
+                    <div className="xl:col-span-2">
+                        <DashboardChartCard title="Monthly Sales">
+                            <SalesChart />
+                        </DashboardChartCard>
+                    </div>
+
+                    <DashboardActivityCard title="Recent Activity">
+                        <div className="space-y-5 text-sm">
+
+                            <div className="border-b pb-3">
+                                <p className="font-semibold">
+                                    John added Fujima NG-45
+                                </p>
+                                <p className="text-gray-500">
+                                    Inventory • 5 minutes ago
+                                </p>
+                            </div>
+
+                            <div className="border-b pb-3">
+                                <p className="font-semibold">
+                                    Mary updated Hoyoma Japan GX35
+                                </p>
+                                <p className="text-gray-500">
+                                    Inventory • 18 minutes ago
+                                </p>
+                            </div>
+
+                            <div className="border-b pb-3">
+                                <p className="font-semibold">
+                                    Purchase Order #421 created
+                                </p>
+                                <p className="text-gray-500">
+                                    Purchasing • 1 hour ago
+                                </p>
+                            </div>
+
+                            <div className="border-b pb-3">
+                                <p className="font-semibold">
+                                    Invoice #1034 paid
+                                </p>
+                                <p className="text-gray-500">
+                                    Finance • 2 hours ago
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className="font-semibold">
+                                    New customer registered
+                                </p>
+                                <p className="text-gray-500">
+                                    Customer Management • Today
+                                </p>
+                            </div>
+
+                        </div>
+                    </DashboardActivityCard>
+
+                </div>
+            </DashboardSection>
+        </>
+    );
 }

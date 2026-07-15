@@ -27,11 +27,11 @@ export default function InventoryPage() {
             </button>
 
             <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
-                Beverages
+                Grass Cutters
             </button>
 
             <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
-                Food
+                Generators
             </button>
             </div>
         {/* </div> Add Padding Here so there is padding around these text elements */}
@@ -40,73 +40,81 @@ export default function InventoryPage() {
       {/* Product Grid */}
       <ItemGrid>
         <ItemCard
-          image="/sample/coke.jpg"
-          name="Coca-Cola 1.5L"
+          image="/images/items/Alen_Backpack_4_Stroke.png"
+          name="Alen Backpack"
           code="SKU-0001"
-          description="Soft drink bottle"
+          description="4 Stroke"
           status={<StatusPill label="In Stock" color="green" />}
         />
 
         <ItemCard
-          image="/sample/coffee.jpg"
-          name="Coffee Beans"
+          image="/images/items/Fujima_NG-45_2_Stroke.png"
+          name="Fujima NG-45"
           code="SKU-0002"
-          description="Premium Arabica Coffee"
+          description="2 Stroke"
           status={<StatusPill label="Low Stock" color="yellow" />}
         />
 
         <ItemCard
-          image="/sample/rice.jpg"
-          name="Rice 25kg"
+          image="/images/items/Hoyoma_Japan_CG411_2_Stroke.png"
+          name="Hoyoma Japan CG411"
           code="SKU-0003"
-          description="Premium Jasmine Rice"
+          description="2 Stroke"
           status={<StatusPill label="Out of Stock" color="red" />}
         />
         <ItemCard
-          image="/sample/coke.jpg"
-          name="Coca-Cola 1.5L"
+          image="/images/items/Hoyoma_Japan_GX35_4_Stroke.png"
+          name="Hoyoma Japan GX35"
           code="SKU-0001"
-          description="Soft drink bottle"
+          description="4 Stroke"
           status={<StatusPill label="In Stock" color="green" />}
         />
 
         <ItemCard
-          image="/sample/coffee.jpg"
-          name="Coffee Beans"
+          image="/images/items/Kawasaki_Kaaz_TD40_2_Stroke.png"
+          name="Kawasaki Kaaz TD40"
           code="SKU-0002"
-          description="Premium Arabica Coffee"
+          description="2 Stroke"
           status={<StatusPill label="Low Stock" color="yellow" />}
         />
 
         <ItemCard
-          image="/sample/rice.jpg"
-          name="Rice 25kg"
-          code="SKU-0003"
-          description="Premium Jasmine Rice"
-          status={<StatusPill label="Out of Stock" color="red" />}
-        />
-        <ItemCard
-          image="/sample/coke.jpg"
-          name="Coca-Cola 1.5L"
+          image="/images/items/Alen_Backpack_4_Stroke.png"
+          name="Alen Backpack"
           code="SKU-0001"
-          description="Soft drink bottle"
+          description="4 Stroke"
           status={<StatusPill label="In Stock" color="green" />}
         />
 
         <ItemCard
-          image="/sample/coffee.jpg"
-          name="Coffee Beans"
+          image="/images/items/Fujima_NG-45_2_Stroke.png"
+          name="Fujima NG-45"
           code="SKU-0002"
-          description="Premium Arabica Coffee"
+          description="2 Stroke"
           status={<StatusPill label="Low Stock" color="yellow" />}
         />
 
         <ItemCard
-          image="/sample/rice.jpg"
-          name="Rice 25kg"
+          image="/images/items/Hoyoma_Japan_CG411_2_Stroke.png"
+          name="Hoyoma Japan CG411"
           code="SKU-0003"
-          description="Premium Jasmine Rice"
+          description="2 Stroke"
           status={<StatusPill label="Out of Stock" color="red" />}
+        />
+        <ItemCard
+          image="/images/items/Hoyoma_Japan_GX35_4_Stroke.png"
+          name="Hoyoma Japan GX35"
+          code="SKU-0001"
+          description="4 Stroke"
+          status={<StatusPill label="In Stock" color="green" />}
+        />
+
+        <ItemCard
+          image="/images/items/Kawasaki_Kaaz_TD40_2_Stroke.png"
+          name="Kawasaki Kaaz TD40"
+          code="SKU-0002"
+          description="2 Stroke"
+          status={<StatusPill label="Low Stock" color="yellow" />}
         />
       </ItemGrid>
     </div>
