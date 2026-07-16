@@ -6,8 +6,11 @@ import ItemGrid from "@/components/inventory/ItemGrid";
 
 import { getProducts } from "@/services/products";
 
+import Modal from "@/components/common/Modal";
+
 export default function InventoryPage() {
     const [products, setProducts] = useState([]);
+    const [open, setOpen] = useState(false);
 
     useEffect(() => {
         async function loadProducts() {
@@ -50,9 +53,24 @@ export default function InventoryPage() {
                         Generators
                     </button>
 
+                    <button
+                        onClick={() => setOpen(true)}
+                        className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                    >
+                        Add Product
+                    </button>
+
                 </div>
 
             </div>
+
+            <Modal
+              open={open}
+              title="Add Product"
+              onClose={() => setOpen(false)}
+          >
+              <p>This is our reusable modal.</p>
+          </Modal>
 
             {/* Product Grid */}
 
