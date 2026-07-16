@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { generateStorageFilename } from "@/lib/files";
 
 const TABLE = "products";
 const BUCKET = "product-images";
@@ -154,11 +155,13 @@ export async function deleteProduct(id) {
    STORAGE
    ========================================================================== */
 
-export async function uploadProductImage(file, filename) {
+export async function uploadProductImage(file) {
+    const filename = generateStorageFilename(file);
+
     const { error } = await supabase.storage
         .from(BUCKET)
         .upload(filename, file, {
-            upsert: true,
+            upsert: false,
         });
 
     if (error) throw error;
