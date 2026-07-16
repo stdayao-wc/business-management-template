@@ -6,6 +6,8 @@ export default function Modal({ open, title, children, onClose }) {
   useEffect(() => {
     if (!open) return;
 
+    document.body.style.overflow = "hidden";
+
     function handleKeyDown(event) {
       if (event.key === "Escape") {
         onClose();
@@ -15,6 +17,7 @@ export default function Modal({ open, title, children, onClose }) {
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      document.body.style.overflow = "";
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [open, onClose]);
