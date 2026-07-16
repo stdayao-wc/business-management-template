@@ -1,122 +1,92 @@
-import ItemCard from "@/components/inventory/ItemCard";
+"use client";
+
+import { useEffect, useState } from "react";
+
 import ItemGrid from "@/components/inventory/ItemGrid";
-import StatusPill from "@/components/inventory/StatusPill";
+
+import { getProducts } from "@/services/products";
 
 export default function InventoryPage() {
-  return (
-    <div className="space-y-10">
-      {/* Inventory Header */}
-      <div
-        className="
-      rounded-xl
-      bg-white
-      px-10
-      py-8
-      shadow-sm
-      mb-10
-    "
-        >
-        {/* <div> Add Padding Here so there is padding around these text elements */}
-            <h1 className="text-4xl font-bold">
-            Products
-            </h1>
+    const [products, setProducts] = useState([]);
 
-            <div className="mt-6 flex gap-4">
-            <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
-                All
-            </button>
+    useEffect(() => {
+        async function loadProducts() {
+            try {
+                const data = await getProducts();
 
-            <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
-                Grass Cutters
-            </button>
+                console.log("Products:", data);
 
-            <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
-                Generators
-            </button>
+                setProducts(data);
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        loadProducts();
+    }, []);
+
+    return (
+        <div className="space-y-10">
+
+            {/* Inventory Header */}
+
+            <div className="rounded-xl bg-white px-10 py-8 shadow-sm">
+
+                <h1 className="text-4xl font-bold">
+                    Products
+                </h1>
+
+                <div className="mt-6 flex gap-4">
+
+                    <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
+                        All
+                    </button>
+
+                    <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
+                        Grass Cutters
+                    </button>
+
+                    <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
+                        Generators
+                    </button>
+
+                </div>
+
             </div>
-        {/* </div> Add Padding Here so there is padding around these text elements */}
-      </div>
 
-      {/* Product Grid */}
-      <ItemGrid>
-        <ItemCard
-          image="/images/items/Alen_Backpack_4_Stroke.png"
-          name="Alen Backpack"
-          code="SKU-0001"
-          description="4 Stroke"
-          status={<StatusPill label="In Stock" color="green" />}
-        />
+            {/* Product Grid */}
 
-        <ItemCard
-          image="/images/items/Fujima_NG-45_2_Stroke.png"
-          name="Fujima NG-45"
-          code="SKU-0002"
-          description="2 Stroke"
-          status={<StatusPill label="Low Stock" color="yellow" />}
-        />
+            <ItemGrid>
 
-        <ItemCard
-          image="/images/items/Hoyoma_Japan_CG411_2_Stroke.png"
-          name="Hoyoma Japan CG411"
-          code="SKU-0003"
-          description="2 Stroke"
-          status={<StatusPill label="Out of Stock" color="red" />}
-        />
-        <ItemCard
-          image="/images/items/Hoyoma_Japan_GX35_4_Stroke.png"
-          name="Hoyoma Japan GX35"
-          code="SKU-0001"
-          description="4 Stroke"
-          status={<StatusPill label="In Stock" color="green" />}
-        />
+                {products.map((product) => (
 
-        <ItemCard
-          image="/images/items/Kawasaki_Kaaz_TD40_2_Stroke.png"
-          name="Kawasaki Kaaz TD40"
-          code="SKU-0002"
-          description="2 Stroke"
-          status={<StatusPill label="Low Stock" color="yellow" />}
-        />
+                    <div
+                        key={product.id}
+                        className="rounded-lg border bg-white p-4 shadow-sm"
+                    >
 
-        <ItemCard
-          image="/images/items/Alen_Backpack_4_Stroke.png"
-          name="Alen Backpack"
-          code="SKU-0001"
-          description="4 Stroke"
-          status={<StatusPill label="In Stock" color="green" />}
-        />
+                        <h2 className="font-semibold">
+                            {product.name}
+                        </h2>
 
-        <ItemCard
-          image="/images/items/Fujima_NG-45_2_Stroke.png"
-          name="Fujima NG-45"
-          code="SKU-0002"
-          description="2 Stroke"
-          status={<StatusPill label="Low Stock" color="yellow" />}
-        />
+                        <p>{product.sku}</p>
 
-        <ItemCard
-          image="/images/items/Hoyoma_Japan_CG411_2_Stroke.png"
-          name="Hoyoma Japan CG411"
-          code="SKU-0003"
-          description="2 Stroke"
-          status={<StatusPill label="Out of Stock" color="red" />}
-        />
-        <ItemCard
-          image="/images/items/Hoyoma_Japan_GX35_4_Stroke.png"
-          name="Hoyoma Japan GX35"
-          code="SKU-0001"
-          description="4 Stroke"
-          status={<StatusPill label="In Stock" color="green" />}
-        />
+                        <p>
+                            {product.categories?.name ??
+                                "No Category"}
+                        </p>
 
-        <ItemCard
-          image="/images/items/Kawasaki_Kaaz_TD40_2_Stroke.png"
-          name="Kawasaki Kaaz TD40"
-          code="SKU-0002"
-          description="2 Stroke"
-          status={<StatusPill label="Low Stock" color="yellow" />}
-        />
-      </ItemGrid>
-    </div>
-  );
+                        <p>
+                            {product.brands?.name ??
+                                "No Brand"}
+                        </p>
+
+                    </div>
+
+                ))}
+
+            </ItemGrid>
+
+        </div>
+    );
 }

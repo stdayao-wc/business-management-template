@@ -1,0 +1,179 @@
+import { supabase } from "@/lib/supabase";
+
+const TABLE = "products";
+const BUCKET = "product-images";
+
+/* ==========================================================================
+   READ
+   ========================================================================== */
+
+export async function getProducts() {
+    const { data, error } = await supabase
+        .from(TABLE)
+        .select(`
+            *,
+            categories (
+                id,
+                name
+            ),
+            brands (
+                id,
+                name
+            )
+        `)
+        .eq("is_active", true)
+        .order("name");
+
+    if (error) throw error;
+
+    return data.map(product => ({
+        ...product,
+        image_url: getProductImageUrl(product.image_path),
+    }));
+}
+
+export async function getProduct(id) {
+    const { data, error } = await supabase
+        .from(TABLE)
+        .select(`
+            *,
+            categories (
+                id,
+                name
+            ),
+            brands (
+                id,
+                name
+            )
+        `)
+        .eq("id", id)
+        .single();
+
+    if (error) throw error;
+
+    return {
+        ...data,
+        image_url: getProductImageUrl(data.image_path),
+    };
+}
+
+/* ==========================================================================
+   CREATE
+   ========================================================================== */
+
+export async function createProduct({
+    sku,
+    barcode = null,
+    name,
+    description = null,
+    category_id,
+    brand_id = null,
+    cost_price,
+    selling_price,
+    image_path = null,
+}) {
+    const { data, error } = await supabase
+        .from(TABLE)
+        .insert({
+            sku,
+            barcode,
+            name,
+            description,
+            category_id,
+            brand_id,
+            cost_price,
+            selling_price,
+            image_path,
+        })
+        .select()
+        .single();
+
+    if (error) throw error;
+
+    return data;
+}
+
+/* ==========================================================================
+   UPDATE
+   ========================================================================== */
+
+export async function updateProduct(
+    id,
+    {
+        sku,
+        barcode = null,
+        name,
+        description = null,
+        category_id,
+        brand_id = null,
+        cost_price,
+        selling_price,
+        image_path = null,
+        is_active,
+    }
+) {
+    const { data, error } = await supabase
+        .from(TABLE)
+        .update({
+            sku,
+            barcode,
+            name,
+            description,
+            category_id,
+            brand_id,
+            cost_price,
+            selling_price,
+            image_path,
+            is_active,
+        })
+        .eq("id", id)
+        .select()
+        .single();
+
+    if (error) throw error;
+
+    return data;
+}
+
+/* ==========================================================================
+   DELETE (SOFT DELETE)
+   ========================================================================== */
+
+export async function deleteProduct(id) {
+    const { error } = await supabase
+        .from(TABLE)
+        .update({
+            is_active: false,
+        })
+        .eq("id", id);
+
+    if (error) throw error;
+}
+
+/* ==========================================================================
+   STORAGE
+   ========================================================================== */
+
+export async function uploadProductImage(file, filename) {
+    const { error } = await supabase.storage
+        .from(BUCKET)
+        .upload(filename, file, {
+            upsert: true,
+        });
+
+    if (error) throw error;
+
+    return filename;
+}
+
+export function getProductImageUrl(imagePath) {
+    if (!imagePath) {
+        return "/images/no-image.png";
+    }
+
+    const { data } = supabase.storage
+        .from(BUCKET)
+        .getPublicUrl(imagePath);
+
+    return data.publicUrl;
+}
