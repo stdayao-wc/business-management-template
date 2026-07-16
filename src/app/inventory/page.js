@@ -3,30 +3,27 @@
 import { useEffect, useState } from "react";
 
 import ItemGrid from "@/components/inventory/ItemGrid";
+import ProductDialog from "@/components/inventory/ProductDialog";
 
 import { getProducts } from "@/services/products";
 
-import Modal from "@/components/common/Modal";
-
 export default function InventoryPage() {
     const [products, setProducts] = useState([]);
-    const [open, setOpen] = useState(false);
+    const [productDialogOpen, setProductDialogOpen] = useState(false);
 
-    useEffect(() => {
-        async function loadProducts() {
-            try {
-                const data = await getProducts();
+    async function loadProducts() {
+    try {
+        const data = await getProducts();
 
-                console.log("Products:", data);
+        setProducts(data);
+    } catch (err) {
+        console.error(err);
+    }
+}
 
-                setProducts(data);
-            } catch (err) {
-                console.error(err);
-            }
-        }
-
-        loadProducts();
-    }, []);
+useEffect(() => {
+    loadProducts();
+}, []);
 
     return (
         <div className="space-y-10">
@@ -54,8 +51,8 @@ export default function InventoryPage() {
                     </button>
 
                     <button
-                        onClick={() => setOpen(true)}
-                        className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                        onClick={() => setProductDialogOpen(true)}
+                        className="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
                     >
                         Add Product
                     </button>
@@ -63,15 +60,6 @@ export default function InventoryPage() {
                 </div>
 
             </div>
-
-            <Modal
-              open={open}
-              title="Add Product"
-              onClose={() => setOpen(false)}
-          >
-              <p>This is our reusable modal.</p>
-          </Modal>
-
             {/* Product Grid */}
 
             <ItemGrid>
@@ -104,7 +92,11 @@ export default function InventoryPage() {
                 ))}
 
             </ItemGrid>
-
+            <ProductDialog
+                open={productDialogOpen}
+                onClose={() => setProductDialogOpen(false)}
+                onSuccess={loadProducts}
+            />
         </div>
     );
 }
