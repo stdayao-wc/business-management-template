@@ -9,21 +9,21 @@ import { getProducts } from "@/services/products";
 
 export default function InventoryPage() {
     const [products, setProducts] = useState([]);
-    const [productDialogOpen, setProductDialogOpen] = useState(false);
+    const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
 
     async function loadProducts() {
-    try {
-        const data = await getProducts();
+        try {
+            const data = await getProducts();
 
-        setProducts(data);
-    } catch (err) {
-        console.error(err);
+            setProducts(data);
+        } catch (err) {
+            console.error(err);
+        }
     }
-}
 
-useEffect(() => {
-    loadProducts();
-}, []);
+    useEffect(() => {
+        loadProducts();
+    }, []);
 
     return (
         <div className="space-y-10">
@@ -51,7 +51,7 @@ useEffect(() => {
                     </button>
 
                     <button
-                        onClick={() => setProductDialogOpen(true)}
+                        onClick={() => setIsProductDialogOpen(true)}
                         className="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
                     >
                         Add Product
@@ -93,8 +93,8 @@ useEffect(() => {
 
             </ItemGrid>
             <ProductDialog
-                open={productDialogOpen}
-                onClose={() => setProductDialogOpen(false)}
+                open={isProductDialogOpen}
+                onClose={() => setIsProductDialogOpen(false)}
                 onSuccess={loadProducts}
             />
         </div>
