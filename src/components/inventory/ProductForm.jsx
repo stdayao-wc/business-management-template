@@ -33,6 +33,7 @@ export default function ProductForm({
     cost_price: "",
     selling_price: "",
   });
+  const [imageFile, setImageFile] = useState(null);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -43,18 +44,23 @@ export default function ProductForm({
     }));
   }
 
+  function handleImageChange(event) {
+    setImageFile(event.target.files[0] ?? null);
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
 
     await onSubmit({
-      ...form,
-
-      barcode: form.barcode || null,
-      description: form.description || null,
-      brand_id: form.brand_id || null,
-
-      cost_price: Number(form.cost_price),
-      selling_price: Number(form.selling_price),
+      form: {
+        ...form,
+        barcode: form.barcode || null,
+        description: form.description || null,
+        brand_id: form.brand_id || null,
+        cost_price: Number(form.cost_price),
+        selling_price: Number(form.selling_price),
+      },
+      imageFile,
     });
   }
 
@@ -100,6 +106,19 @@ export default function ProductForm({
           value={form.name}
           onChange={handleChange}
           required
+          className={fieldClass}
+        />
+      </div>
+
+      {/* Product Image */}
+
+      <div>
+        <label className={labelClass}>Product Image</label>
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleImageChange}
           className={fieldClass}
         />
       </div>

@@ -8,7 +8,7 @@ import ProductForm from "./ProductForm";
 
 import { getCategories } from "@/services/categories";
 import { getBrands } from "@/services/brands";
-import { createProduct } from "@/services/products";
+import { createProduct, uploadProductImage } from "@/services/products";
 
 export default function ProductDialog({ open, onClose, onSuccess }) {
   const [categories, setCategories] = useState([]);
@@ -36,11 +36,20 @@ export default function ProductDialog({ open, onClose, onSuccess }) {
     loadLookupData();
   }, [open]);
 
-  async function handleSubmit(form) {
+  async function handleSubmit({ form, imageFile }) {
     try {
       setSaving(true);
 
-      await createProduct(form);
+      let image_path = null;
+
+      if (imageFile) {
+        image_path = await uploadProductImage(imageFile);
+      }
+
+      await createProduct({
+        ...form,
+        image_path,
+      });
 
       onSuccess?.();
 
