@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import ItemCard from "@/components/inventory/ItemCard";
 import ItemGrid from "@/components/inventory/ItemGrid";
 import ProductDialog from "@/components/inventory/ProductDialog";
 
@@ -63,34 +64,12 @@ export default function InventoryPage() {
             {/* Product Grid */}
 
             <ItemGrid>
-
                 {products.map((product) => (
-
-                    <div
+                    <ItemCard
                         key={product.id}
-                        className="rounded-lg border bg-white p-4 shadow-sm"
-                    >
-
-                        <h2 className="font-semibold">
-                            {product.name}
-                        </h2>
-
-                        <p>{product.sku}</p>
-
-                        <p>
-                            {product.categories?.name ??
-                                "No Category"}
-                        </p>
-
-                        <p>
-                            {product.brands?.name ??
-                                "No Brand"}
-                        </p>
-
-                    </div>
-
+                        product={product}
+                    />
                 ))}
-
             </ItemGrid>
             <ProductDialog
                 open={isProductDialogOpen}
