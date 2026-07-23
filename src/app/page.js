@@ -1,3 +1,4 @@
+import LogoutButton from "@/components/auth/LogoutButton";
 import DashboardActivityCard from "@/components/dashboard/DashboardActivityCard";
 import DashboardChartCard from "@/components/dashboard/DashboardChartCard";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
@@ -106,6 +107,7 @@ export default function Home() {
                     </DashboardActivityCard>
 
                 </div>
+                <LogoutButton />
             </DashboardSection>
         </>
     );
