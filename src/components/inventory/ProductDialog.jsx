@@ -82,14 +82,15 @@ export default function ProductDialog({
   return (
     <Modal open={open} title={isEditing ? "Edit Product" : "Add Product"} onClose={onClose}>
       <ProductForm
+        product={product}
         lookupData={{
-          categories,
-          brands,
+            categories,
+            brands,
         }}
         saving={saving}
         onSubmit={handleSubmit}
         onCancel={onClose}
-      />
+    />
     </Modal>
   );
 }

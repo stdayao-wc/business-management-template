@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const labelClass = "mb-2 block text-sm font-medium";
 
@@ -13,15 +13,7 @@ const primaryButtonClass =
 const secondaryButtonClass =
   "rounded-lg border px-5 py-2 transition hover:bg-gray-100";
 
-export default function ProductForm({
-  lookupData,
-  saving,
-  onSubmit,
-  onCancel,
-}) {
-  const { categories, brands } = lookupData;
-
-  const [form, setForm] = useState({
+  const defaultForm = {
     sku: "",
     barcode: "",
     name: "",
@@ -32,8 +24,42 @@ export default function ProductForm({
 
     cost_price: "",
     selling_price: "",
-  });
+  };
+
+export default function ProductForm({
+  product,
+  lookupData,
+  saving,
+  onSubmit,
+  onCancel,
+}) {
+  const { categories, brands } = lookupData;
+
+
+
+  const [form, setForm] = useState(defaultForm);
   const [imageFile, setImageFile] = useState(null);
+
+  useEffect(() => {
+    if (product) {
+      setForm({
+        sku: product.sku ?? "",
+        barcode: product.barcode ?? "",
+        name: product.name ?? "",
+        description: product.description ?? "",
+
+        category_id: product.category_id ?? "",
+        brand_id: product.brand_id ?? "",
+
+        cost_price: product.cost_price ?? "",
+        selling_price: product.selling_price ?? "",
+      });
+    } else {
+      setForm(defaultForm);
+    }
+
+    setImageFile(null);
+  }, [product]);
 
   function handleChange(event) {
     const { name, value } = event.target;
