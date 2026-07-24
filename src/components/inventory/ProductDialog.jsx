@@ -8,9 +8,19 @@ import ProductForm from "./ProductForm";
 
 import { getCategories } from "@/services/categories";
 import { getBrands } from "@/services/brands";
-import { createProduct, uploadProductImage } from "@/services/products";
+import {
+  createProduct,
+  updateProduct,
+  uploadProductImage,
+} from "@/services/products";
 
-export default function ProductDialog({ open, onClose, onSuccess }) {
+export default function ProductDialog({
+  open,
+  product,
+  onClose,
+  onSuccess,
+}) {
+  const isEditing = product != null;
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
 
@@ -40,20 +50,28 @@ export default function ProductDialog({ open, onClose, onSuccess }) {
     try {
       setSaving(true);
 
-      let image_path = null;
+      let image_path = product?.image_path ?? null;
 
       if (imageFile) {
         image_path = await uploadProductImage(imageFile);
       }
 
-      await createProduct({
-        ...form,
-        image_path,
-      });
-
-      onSuccess?.();
+      if (isEditing) {
+        await updateProduct(product.id, {
+          ...form,
+          image_path,
+          is_active: product.is_active,
+        });
+      } else {
+        await createProduct({
+          ...form,
+          image_path,
+        });
+      }
 
       onClose();
+
+      onSuccess?.();
     } catch (err) {
       console.error(err);
     } finally {
@@ -62,7 +80,7 @@ export default function ProductDialog({ open, onClose, onSuccess }) {
   }
 
   return (
-    <Modal open={open} title="Add Product" onClose={onClose}>
+    <Modal open={open} title={isEditing ? "Edit Product" : "Add Product"} onClose={onClose}>
       <ProductForm
         lookupData={{
           categories,

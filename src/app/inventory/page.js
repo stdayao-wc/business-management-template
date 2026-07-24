@@ -10,7 +10,9 @@ import { getProducts } from "@/services/products";
 
 export default function InventoryPage() {
     const [products, setProducts] = useState([]);
+
     const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState(null);
 
     async function loadProducts() {
         try {
@@ -20,6 +22,21 @@ export default function InventoryPage() {
         } catch (err) {
             console.error(err);
         }
+    }
+
+    function handleAddProduct() {
+        setSelectedProduct(null);
+        setIsProductDialogOpen(true);
+    }
+
+    function handleEditProduct(product) {
+        setSelectedProduct(product);
+        setIsProductDialogOpen(true);
+    }
+
+    function handleCloseProductDialog() {
+        setSelectedProduct(null);
+        setIsProductDialogOpen(false);
     }
 
     useEffect(() => {
@@ -52,7 +69,7 @@ export default function InventoryPage() {
                     </button>
 
                     <button
-                        onClick={() => setIsProductDialogOpen(true)}
+                        onClick={handleAddProduct}
                         className="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
                     >
                         Add Product
@@ -68,12 +85,14 @@ export default function InventoryPage() {
                     <ItemCard
                         key={product.id}
                         product={product}
+                        onEdit={handleEditProduct}
                     />
                 ))}
             </ItemGrid>
             <ProductDialog
                 open={isProductDialogOpen}
-                onClose={() => setIsProductDialogOpen(false)}
+                product={selectedProduct}
+                onClose={handleCloseProductDialog}
                 onSuccess={loadProducts}
             />
         </div>
