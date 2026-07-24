@@ -2,7 +2,11 @@ import Image from "next/image";
 
 import StatusPill from "./StatusPill";
 
-export default function ItemCard({ product }) {
+export default function ItemCard({
+  product,
+  onEdit,
+  onDelete,
+}) {
   return (
     <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
       <div className="relative mb-5 h-48 w-full overflow-hidden rounded-lg bg-gray-100">
@@ -31,8 +35,26 @@ export default function ItemCard({ product }) {
           ₱{Number(product.selling_price ?? 0).toLocaleString()}
         </p>
 
-        <div className="mt-auto pt-5">
+        <div className="mt-auto space-y-4 pt-5">
           <StatusPill active={product.is_active} />
+
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => onEdit?.(product)}
+              className="flex-1 rounded-lg border border-blue-600 px-3 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50"
+            >
+              Edit
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onDelete?.(product)}
+              className="flex-1 rounded-lg border border-red-600 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+            >
+              Delete
+            </button>
+          </div>
         </div>
       </div>
     </div>

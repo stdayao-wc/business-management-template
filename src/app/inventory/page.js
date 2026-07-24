@@ -39,6 +39,10 @@ export default function InventoryPage() {
         setIsProductDialogOpen(false);
     }
 
+    function handleDeleteProduct(product) {
+        console.log(product);
+        }
+
     useEffect(() => {
         loadProducts();
     }, []);
@@ -86,7 +90,8 @@ export default function InventoryPage() {
                         key={product.id}
                         product={product}
                         onEdit={handleEditProduct}
-                    />
+                        onDelete={handleDeleteProduct}
+                        />
                 ))}
             </ItemGrid>
             <ProductDialog
