@@ -169,6 +169,18 @@ export async function uploadProductImage(file) {
     return filename;
 }
 
+export async function deleteProductImage(imagePath) {
+    if (!imagePath) {
+        return;
+    }
+
+    const { error } = await supabase.storage
+        .from(BUCKET)
+        .remove([imagePath]);
+
+    if (error) throw error;
+}
+
 export function getProductImageUrl(imagePath) {
     if (!imagePath) {
         return "/images/no-image.png";

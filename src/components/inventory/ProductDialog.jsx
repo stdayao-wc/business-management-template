@@ -12,14 +12,10 @@ import {
   createProduct,
   updateProduct,
   uploadProductImage,
+  deleteProductImage,
 } from "@/services/products";
 
-export default function ProductDialog({
-  open,
-  product,
-  onClose,
-  onSuccess,
-}) {
+export default function ProductDialog({ open, product, onClose, onSuccess }) {
   const isEditing = product != null;
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
@@ -50,23 +46,31 @@ export default function ProductDialog({
     try {
       setSaving(true);
 
-      let image_path = product?.image_path ?? null;
+      let nextImagePath = product?.image_path ?? null;
 
       if (imageFile) {
-        image_path = await uploadProductImage(imageFile);
+        nextImagePath = await uploadProductImage(imageFile);
       }
 
       if (isEditing) {
         await updateProduct(product.id, {
           ...form,
-          image_path,
+          image_path: nextImagePath,
           is_active: product.is_active,
         });
       } else {
         await createProduct({
           ...form,
-          image_path,
+          image_path: nextImagePath,
         });
+      }
+
+      if (
+        imageFile &&
+        product?.image_path &&
+        product.image_path !== nextImagePath
+      ) {
+        await deleteProductImage(product.image_path);
       }
 
       onClose();
@@ -80,17 +84,21 @@ export default function ProductDialog({
   }
 
   return (
-    <Modal open={open} title={isEditing ? "Edit Product" : "Add Product"} onClose={onClose}>
+    <Modal
+      open={open}
+      title={isEditing ? "Edit Product" : "Add Product"}
+      onClose={onClose}
+    >
       <ProductForm
         product={product}
         lookupData={{
-            categories,
-            brands,
+          categories,
+          brands,
         }}
         saving={saving}
         onSubmit={handleSubmit}
         onCancel={onClose}
-    />
+      />
     </Modal>
   );
 }
