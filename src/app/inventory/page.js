@@ -6,7 +6,10 @@ import ItemCard from "@/components/inventory/ItemCard";
 import ItemGrid from "@/components/inventory/ItemGrid";
 import ProductDialog from "@/components/inventory/ProductDialog";
 
-import { getProducts } from "@/services/products";
+import {
+    getProducts,
+    deleteProduct,
+} from "@/services/products";
 
 export default function InventoryPage() {
     const [products, setProducts] = useState([]);
@@ -39,9 +42,23 @@ export default function InventoryPage() {
         setIsProductDialogOpen(false);
     }
 
-    function handleDeleteProduct(product) {
-        console.log(product);
+    async function handleDeleteProduct(product) {
+        const confirmed = window.confirm(
+            `Delete "${product.name}"?`
+        );
+
+        if (!confirmed) {
+            return;
         }
+
+        try {
+            await deleteProduct(product.id);
+            await loadProducts();
+        } catch (error) {
+            console.error(error);
+            alert("Unable to delete product.");
+        }
+    }
 
     useEffect(() => {
         loadProducts();
