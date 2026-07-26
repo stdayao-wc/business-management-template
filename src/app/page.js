@@ -20,25 +20,25 @@ export default function Home() {
             <DashboardSection>
                 <DashboardStatsGrid>
                     <DashboardStatCard
-                        title="📦 Products"
+                        title="Products"
                         value="328"
                         subtitle="+12 added this month"
                     />
 
                     <DashboardStatCard
-                        title="🛒 Orders Today"
+                        title="Orders Today"
                         value="82"
                         subtitle="+8 since yesterday"
                     />
 
                     <DashboardStatCard
-                        title="💰 Revenue"
+                        title="Revenue"
                         value="₱125,430"
                         subtitle="+15% from last month"
                     />
 
                     <DashboardStatCard
-                        title="👥 Customers"
+                        title="Customers"
                         value="1,240"
                         subtitle="+42 new customers"
                     />
