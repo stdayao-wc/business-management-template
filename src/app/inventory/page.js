@@ -6,6 +6,8 @@ import ItemCard from "@/components/inventory/ItemCard";
 import ItemGrid from "@/components/inventory/ItemGrid";
 import ProductDialog from "@/components/inventory/ProductDialog";
 import { toast } from "sonner";
+import ReceiveStockDialog from "@/components/inventory/ReceiveStockDialog";
+import { getInventoryCounts } from "@/services/inventory";
 
 import {
     getProducts,
@@ -16,18 +18,30 @@ export default function InventoryPage() {
     const [products, setProducts] = useState([]);
 
     const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
+    const [isReceiveStockDialogOpen, setIsReceiveStockDialogOpen] =
+        useState(false);
+
     const [selectedProduct, setSelectedProduct] = useState(null);
 
     async function loadProducts() {
         try {
-            const data = await getProducts();
+            const products = await getProducts();
 
-            setProducts(data);
+            const counts = await getInventoryCounts(
+                products.map((product) => product.id)
+            );
+
+            setProducts(
+                products.map((product) => ({
+                    ...product,
+                    stock: counts[product.id] ?? 0,
+                }))
+            );
         } catch (err) {
             console.error(err);
         }
     }
-
+    
     function handleAddProduct() {
         setSelectedProduct(null);
         setIsProductDialogOpen(true);
@@ -41,6 +55,16 @@ export default function InventoryPage() {
     function handleCloseProductDialog() {
         setSelectedProduct(null);
         setIsProductDialogOpen(false);
+    }
+
+    function handleReceiveStock(product) {
+        setSelectedProduct(product);
+        setIsReceiveStockDialogOpen(true);
+    }
+
+    function handleCloseReceiveStockDialog() {
+        setSelectedProduct(null);
+        setIsReceiveStockDialogOpen(false);
     }
 
     async function handleDeleteProduct(product) {
@@ -113,13 +137,20 @@ export default function InventoryPage() {
                         product={product}
                         onEdit={handleEditProduct}
                         onDelete={handleDeleteProduct}
-                        />
+                        onReceiveStock={handleReceiveStock}
+                    />
                 ))}
             </ItemGrid>
             <ProductDialog
                 open={isProductDialogOpen}
                 product={selectedProduct}
                 onClose={handleCloseProductDialog}
+                onSuccess={loadProducts}
+            />
+            <ReceiveStockDialog
+                open={isReceiveStockDialogOpen}
+                product={selectedProduct}
+                onClose={handleCloseReceiveStockDialog}
                 onSuccess={loadProducts}
             />
         </div>

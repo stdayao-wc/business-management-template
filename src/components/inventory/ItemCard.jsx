@@ -6,6 +6,7 @@ export default function ItemCard({
   product,
   onEdit,
   onDelete,
+  onReceiveStock,
 }) {
   return (
     <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
@@ -36,7 +37,15 @@ export default function ItemCard({
         </p>
 
         <div className="mt-auto space-y-4 pt-5">
-          <StatusPill active={product.is_active} />
+          <StatusPill stock={product.stock} />
+
+          <button
+            type="button"
+            onClick={() => onReceiveStock?.(product)}
+            className="w-full rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-green-700"
+          >
+            Receive Stock
+          </button>
 
           <div className="flex gap-2">
             <button

@@ -97,3 +97,31 @@ export async function receiveStock(productId, quantity) {
         items: data,
     };
 }
+
+export async function getInventoryCounts(productIds) {
+    if (productIds.length === 0) {
+        return {};
+    }
+
+    const status = await getInStockStatus();
+
+    const { data, error } = await supabase
+        .from(INVENTORY_TABLE)
+        .select("product_id")
+        .eq("status_id", status.id)
+        .in("product_id", productIds);
+
+    if (error) throw error;
+
+    const counts = {};
+
+    for (const id of productIds) {
+        counts[id] = 0;
+    }
+
+    for (const item of data) {
+        counts[item.product_id]++;
+    }
+
+    return counts;
+}
