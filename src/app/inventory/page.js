@@ -100,9 +100,6 @@ export default function InventoryPage() {
                     >
                         Add Product
                     </button>
-                    <button onClick={() => toast.success("Hello!")}>
-                        Test Toast
-                        </button>
 
                 </div>
 
