@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import ItemCard from "@/components/inventory/ItemCard";
 import ItemGrid from "@/components/inventory/ItemGrid";
 import ProductDialog from "@/components/inventory/ProductDialog";
+import { toast } from "sonner";
 
 import {
     getProducts,
@@ -53,10 +54,14 @@ export default function InventoryPage() {
 
         try {
             await deleteProduct(product.id);
+
             await loadProducts();
-        } catch (error) {
-            console.error(error);
-            alert("Unable to delete product.");
+
+            toast.success("Product deleted successfully.");
+        } catch (err) {
+            console.error(err);
+
+            toast.error("Unable to delete product.");
         }
     }
 
@@ -95,6 +100,9 @@ export default function InventoryPage() {
                     >
                         Add Product
                     </button>
+                    <button onClick={() => toast.success("Hello!")}>
+                        Test Toast
+                        </button>
 
                 </div>
 

@@ -6,6 +6,8 @@ import Modal from "@/components/common/Modal";
 
 import ProductForm from "./ProductForm";
 
+import { toast } from "sonner";
+
 import { getCategories } from "@/services/categories";
 import { getBrands } from "@/services/brands";
 import {
@@ -73,11 +75,21 @@ export default function ProductDialog({ open, product, onClose, onSuccess }) {
         await deleteProductImage(product.image_path);
       }
 
+      await onSuccess?.();
+
       onClose();
 
-      onSuccess?.();
+      toast.success(
+        isEditing
+          ? "Product updated successfully."
+          : "Product created successfully.",
+      );
     } catch (err) {
       console.error(err);
+
+      toast.error(
+        isEditing ? "Unable to update product." : "Unable to create product.",
+      );
     } finally {
       setSaving(false);
     }
