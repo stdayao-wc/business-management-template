@@ -68,7 +68,10 @@ function buildInventoryItems(
     }));
 }
 
-export async function receiveStock(productId, quantity) {
+export async function receiveStock({
+    productId,
+    quantity,
+}) {
     if (!Number.isInteger(quantity) || quantity <= 0) {
         throw new Error("Quantity must be a positive integer.");
     }
