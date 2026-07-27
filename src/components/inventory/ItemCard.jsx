@@ -9,7 +9,11 @@ export default function ItemCard({
 
   onEdit,
   onDelete,
+
   onReceiveStock,
+  onShipStock,
+  onReserveStock,
+  onDamageStock,
 }) {
   const isCatalog = mode === "catalog";
   const isInventory = mode === "inventory";
@@ -46,13 +50,39 @@ export default function ItemCard({
           {isInventory && <StatusPill stock={product.stock} />}
 
           {isInventory && (
-            <button
-              type="button"
-              onClick={() => onReceiveStock?.(product)}
-              className="w-full rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-green-700"
-            >
-              Receive Stock
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => onReceiveStock?.(product)}
+                className="rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-green-700"
+              >
+                Receive
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onShipStock?.(product)}
+                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+              >
+                Ship
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onReserveStock?.(product)}
+                className="rounded-lg bg-yellow-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-yellow-600"
+              >
+                Reserve
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onDamageStock?.(product)}
+                className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+              >
+                Damage
+              </button>
+            </div>
           )}
 
           <div className="flex gap-2">

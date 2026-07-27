@@ -1,3 +1,16 @@
+// Inventory transactions.
+//
+// Current:
+// - Receive
+//
+// Planned:
+// - Ship
+// - Reserve
+// - Damage
+//
+// These operations will eventually use a shared
+// InventoryTransactionDialog.
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -51,6 +64,18 @@ export default function InventoryPage() {
         setIsReceiveStockDialogOpen(false);
     }
 
+    function handleShipStock(product) {
+        console.log("Ship", product);
+    }
+
+    function handleReserveStock(product) {
+        console.log("Reserve", product);
+    }
+
+    function handleDamageStock(product) {
+        console.log("Damage", product);
+    }
+
     useEffect(() => {
         loadInventory();
     }, []);
@@ -91,6 +116,9 @@ export default function InventoryPage() {
                         key={product.id}
                         product={product}
                         onReceiveStock={handleReceiveStock}
+                        onShipStock={handleShipStock}
+                        onReserveStock={handleReserveStock}
+                        onDamageStock={handleDamageStock}
                     />
                 ))}
             </ItemGrid>
