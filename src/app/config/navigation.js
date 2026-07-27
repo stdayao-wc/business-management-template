@@ -5,6 +5,11 @@ const navigation = [
       icon: "/icons/dashboard-alt.png",
     },
     {
+      label: "Products",
+      href: "/products",
+      icon: "/icons/inventory.png",
+    },
+    {
       label: "Inventory",
       href: "/inventory",
       icon: "/icons/inventory.png",
