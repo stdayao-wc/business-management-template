@@ -125,3 +125,15 @@ export async function getInventoryCounts(productIds) {
 
     return counts;
 }
+
+export async function shipStock() {
+    throw new Error("Ship Stock has not been implemented yet.");
+}
+
+export async function reserveStock() {
+    throw new Error("Reserve Stock has not been implemented yet.");
+}
+
+export async function damageStock() {
+    throw new Error("Damage Stock has not been implemented yet.");
+}
