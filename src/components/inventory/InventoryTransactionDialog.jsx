@@ -1,26 +1,52 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Modal from "@/components/common/Modal";
-import { receiveStock } from "@/services/inventory";
 
-export default function ReceiveStockDialog({
+import { TRANSACTION_CONFIG } from "@/app/config/inventoryTransactionConfig";
+
+export default function InventoryTransactionDialog({
   open,
-  onClose,
+
   product,
+
+  type,
+
+  onClose,
+
   onSuccess,
 }) {
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  async function handleReceive() {
+  const config = TRANSACTION_CONFIG[type];
+
+  useEffect(() => {
+    if (open) {
+      setQuantity(1);
+    }
+  }, [open, product, type]);
+
+  if (!config || !product) {
+    return null;
+  }
+
+  async function handleSubmit() {
     try {
       setLoading(true);
 
-      await receiveStock(product.id, quantity);
+      if (!config?.service) {
+        throw new Error(`${config.title} is not implemented yet.`);
+      }
+
+      await config.service({
+        productId: product.id,
+        quantity,
+      });
 
       onSuccess?.();
+
       onClose();
     } catch (error) {
       console.error(error);
@@ -36,7 +62,7 @@ export default function ReceiveStockDialog({
     <Modal open={open} onClose={onClose}>
       <div className="space-y-6">
         <div>
-          <h2 className="text-xl font-semibold">Receive Stock</h2>
+          <h2 className="text-xl font-semibold">{config.title}</h2>
 
           <p className="text-sm text-gray-500 mt-1">{product.name}</p>
 
@@ -65,11 +91,11 @@ export default function ReceiveStockDialog({
           </button>
 
           <button
-            onClick={handleReceive}
+            onClick={handleSubmit}
             disabled={loading}
             className="px-4 py-2 rounded-lg bg-black text-white"
           >
-            {loading ? "Receiving..." : "Receive Stock"}
+            {loading ? config.loading : config.action}
           </button>
         </div>
       </div>

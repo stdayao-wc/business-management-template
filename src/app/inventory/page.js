@@ -1,10 +1,24 @@
+// Inventory transactions.
+//
+// Current:
+// - Receive
+//
+// Planned:
+// - Ship
+// - Reserve
+// - Damage
+//
+// These operations will eventually use a shared
+// InventoryTransactionDialog.
+
 "use client";
 
 import { useEffect, useState } from "react";
 
+import { INVENTORY_TRANSACTION_TYPES } from "@/constants/inventoryTransactions";
 import ItemCard from "@/components/inventory/ItemCard";
 import ItemGrid from "@/components/inventory/ItemGrid";
-import ReceiveStockDialog from "@/components/inventory/ReceiveStockDialog";
+import InventoryTransactionDialog from "@/components/inventory/InventoryTransactionDialog";
 
 import {
     getInventoryCounts,
@@ -17,8 +31,13 @@ import {
 export default function InventoryPage() {
     const [products, setProducts] = useState([]);
 
-    const [isReceiveStockDialogOpen, setIsReceiveStockDialogOpen] =
-        useState(false);
+    const [
+        isTransactionDialogOpen,
+        setIsTransactionDialogOpen,
+    ] = useState(false);
+
+    const [transactionType, setTransactionType] =
+        useState(null);
 
     const [selectedProduct, setSelectedProduct] = useState(null);
 
@@ -41,16 +60,33 @@ export default function InventoryPage() {
         }
     }
 
-    function handleReceiveStock(product) {
+    function openTransaction(product, type) {
         setSelectedProduct(product);
-        setIsReceiveStockDialogOpen(true);
+        setTransactionType(type);
+        setIsTransactionDialogOpen(true);
     }
 
-    function handleCloseReceiveStockDialog() {
+    function handleCloseTransactionDialog() {
         setSelectedProduct(null);
-        setIsReceiveStockDialogOpen(false);
+        setTransactionType(null);
+        setIsTransactionDialogOpen(false);
     }
 
+    function handleReceiveStock(product) {
+        openTransaction(product, INVENTORY_TRANSACTION_TYPES.RECEIVE);
+    }
+
+    function handleShipStock(product) {
+        openTransaction(product, INVENTORY_TRANSACTION_TYPES.SHIP);
+    }
+
+    function handleReserveStock(product) {
+        openTransaction(product, INVENTORY_TRANSACTION_TYPES.RESERVE);
+    }
+
+    function handleDamageStock(product) {
+        openTransaction(product, INVENTORY_TRANSACTION_TYPES.DAMAGE);
+    }
     useEffect(() => {
         loadInventory();
     }, []);
@@ -91,13 +127,17 @@ export default function InventoryPage() {
                         key={product.id}
                         product={product}
                         onReceiveStock={handleReceiveStock}
+                        onShipStock={handleShipStock}
+                        onReserveStock={handleReserveStock}
+                        onDamageStock={handleDamageStock}
                     />
                 ))}
             </ItemGrid>
-            <ReceiveStockDialog
-                open={isReceiveStockDialogOpen}
+            <InventoryTransactionDialog
+                open={isTransactionDialogOpen}
                 product={selectedProduct}
-                onClose={handleCloseReceiveStockDialog}
+                type={transactionType}
+                onClose={handleCloseTransactionDialog}
                 onSuccess={loadInventory}
             />
         </div>

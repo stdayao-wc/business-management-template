@@ -1,17 +1,17 @@
 import { supabase } from "@/lib/supabase/client";
+import { INVENTORY_ITEM_STATUSES } from "@/constants/inventoryStatuses";
 
 const INVENTORY_TABLE = "inventory_items";
 const STATUS_TABLE = "inventory_item_statuses";
 const PRODUCTS_TABLE = "products";
-const IN_STOCK_STATUS = "IN_STOCK";
 
 const ITEM_CODE_PADDING = 6;
 
-async function getInStockStatus() {
+async function getInventoryStatus(statusName) {
     const { data, error } = await supabase
         .from(STATUS_TABLE)
         .select("id, name")
-        .eq("name", IN_STOCK_STATUS)
+        .eq("name", statusName)
         .single();
 
     if (error) throw error;
@@ -68,13 +68,18 @@ function buildInventoryItems(
     }));
 }
 
-export async function receiveStock(productId, quantity) {
+export async function receiveStock({
+    productId,
+    quantity,
+}) {
     if (!Number.isInteger(quantity) || quantity <= 0) {
         throw new Error("Quantity must be a positive integer.");
     }
 
     const product = await getProduct(productId);
-    const status = await getInStockStatus();
+    const status = await getInventoryStatus(
+        INVENTORY_ITEM_STATUSES.IN_STOCK
+    );
     const currentCount = await getInventoryCount(productId);
 
     const items = buildInventoryItems(
@@ -98,12 +103,63 @@ export async function receiveStock(productId, quantity) {
     };
 }
 
+async function updateInventoryItemStatus({
+    productId,
+    quantity,
+    fromStatus,
+    toStatus,
+}) {
+    if (!Number.isInteger(quantity) || quantity <= 0) {
+        throw new Error(
+            "Quantity must be a positive integer."
+        );
+    }
+
+    const sourceStatus = await getInventoryStatus(fromStatus);
+    const destinationStatus = await getInventoryStatus(toStatus);
+
+    const { data: items, error } = await supabase
+        .from(INVENTORY_TABLE)
+        .select("*")
+        .eq("product_id", productId)
+        .eq("status_id", sourceStatus.id)
+        .order("id")
+        .limit(quantity);
+
+    if (error) throw error;
+
+    if (items.length < quantity) {
+        throw new Error(
+            `Only ${items.length} item(s) available.`
+        );
+    }
+
+    const ids = items.map((item) => item.id);
+
+    const { data, error: updateError } = await supabase
+        .from(INVENTORY_TABLE)
+        .update({
+            status_id: destinationStatus.id,
+        })
+        .in("id", ids)
+        .select();
+
+    if (updateError) throw updateError;
+
+    return {
+        quantity,
+        items: data,
+    };
+}
+
 export async function getInventoryCounts(productIds) {
     if (productIds.length === 0) {
         return {};
     }
 
-    const status = await getInStockStatus();
+    const status = await getInventoryStatus(
+        INVENTORY_ITEM_STATUSES.IN_STOCK
+    );
 
     const { data, error } = await supabase
         .from(INVENTORY_TABLE)
@@ -124,4 +180,46 @@ export async function getInventoryCounts(productIds) {
     }
 
     return counts;
+}
+
+export async function shipStock({
+    productId,
+    quantity,
+}) {
+    return updateInventoryItemStatus({
+        productId,
+        quantity,
+        fromStatus:
+            INVENTORY_ITEM_STATUSES.IN_STOCK,
+        toStatus:
+            INVENTORY_ITEM_STATUSES.SHIPPED,
+    });
+}
+
+export async function reserveStock({
+    productId,
+    quantity,
+}) {
+    return updateInventoryItemStatus({
+        productId,
+        quantity,
+        fromStatus:
+            INVENTORY_ITEM_STATUSES.IN_STOCK,
+        toStatus:
+            INVENTORY_ITEM_STATUSES.RESERVED,
+    });
+}
+
+export async function damageStock({
+    productId,
+    quantity,
+}) {
+    return updateInventoryItemStatus({
+        productId,
+        quantity,
+        fromStatus:
+            INVENTORY_ITEM_STATUSES.IN_STOCK,
+        toStatus:
+            INVENTORY_ITEM_STATUSES.DAMAGED,
+    });
 }
