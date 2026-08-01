@@ -1,7 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 
-export function updateSession(request) {
+const PUBLIC_ROUTES = ["/login"];
+
+export async function updateSession(request) {
   let response = NextResponse.next({
     request,
   });
@@ -16,7 +18,7 @@ export function updateSession(request) {
         },
 
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
 
@@ -32,8 +34,26 @@ export function updateSession(request) {
     }
   );
 
-  // Refresh session if needed.
-  supabase.auth.getUser();
+  // Refresh the session and get the current user.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  console.log("=== Middleware ===");
+  console.log("Path:", request.nextUrl.pathname);
+  console.log("User:", user?.email ?? "NOT LOGGED IN");
 
+  const pathname = request.nextUrl.pathname;
+  const isPublicRoute = PUBLIC_ROUTES.includes(pathname);
+
+  // Logged in users should not access public routes.
+  if (isPublicRoute && user) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  // Logged out users cannot access protected routes.
+  if (!isPublicRoute && !user) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+  console.log("Middleware User:", user?.email);
   return response;
 }
