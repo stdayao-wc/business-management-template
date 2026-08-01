@@ -352,3 +352,12 @@ Project Principles
 - Prefer permissions over role checks
 - Build MVP first
 - Refactor only when it clearly improves maintainability
+
+## Authentication Invariants
+
+Every authenticated user must have:
+
+- One profile record.
+- At least one assigned role.
+
+Missing profiles or roles are treated as data integrity errors rather than valid application states.
