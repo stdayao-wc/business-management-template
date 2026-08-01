@@ -7,6 +7,7 @@ import themes from "../config/theme";
 import layout from "../config/layout";
 
 import { getCurrentAuth } from "@/services/auth-server";
+import { AuthProvider } from "@/context/AuthContext";
 
 export default async function ProtectedLayout({ children }) {
   const auth = await getCurrentAuth();
@@ -16,12 +17,14 @@ export default async function ProtectedLayout({ children }) {
   }
 
   return (
-    <AppLayout
-      navigation={navigation}
-      theme={themes.light}
-      layout={layout}
-    >
-      {children}
-    </AppLayout>
+    <AuthProvider auth={auth}>
+        <AppLayout
+        navigation={navigation}
+        theme={themes.light}
+        layout={layout}
+        >
+        {children}
+        </AppLayout>
+    </AuthProvider>
   );
 }
