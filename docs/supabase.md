@@ -361,3 +361,102 @@ Every authenticated user must have:
 - At least one assigned role.
 
 Missing profiles or roles are treated as data integrity errors rather than valid application states.
+
+### permissions
+
+**Purpose**
+
+Defines every permission available in the application.
+
+Permissions represent the smallest unit of authorization and are assigned to roles rather than directly to users.
+
+Permission names follow the convention:
+
+```
+resource.action
+```
+
+Examples
+
+```
+products.read
+products.create
+inventory.receive
+inventory.ship
+reports.read
+```
+
+**Primary Key**
+
+- id (bigint)
+
+**Columns**
+
+| Column | Type |
+|---------|------|
+| id | bigint |
+| name | text |
+| description | text |
+| created_at | timestamptz |
+
+**Relationships**
+
+- Referenced by `role_permissions.permission_id`
+
+**Notes**
+
+- Permission names are globally unique.
+- Permissions are immutable lookup data.
+- Permissions are assigned to roles, never directly to users.
+- The application should always check permissions instead of role names.
+
+---
+
+### role_permissions
+
+**Purpose**
+
+Assigns permissions to roles.
+
+This table establishes the many-to-many relationship between roles and permissions.
+
+**Primary Key**
+
+Composite Key
+
+- role_id
+- permission_id
+
+**Columns**
+
+| Column | Type |
+|---------|------|
+| role_id | bigint |
+| permission_id | bigint |
+| assigned_at | timestamptz |
+
+**Relationships**
+
+- role_id → roles.id
+- permission_id → permissions.id
+
+**Notes**
+
+- Supports assigning multiple permissions to a role.
+- Supports sharing the same permission across multiple roles.
+- Mirrors the design of `user_roles` for consistency.
+
+## Authentication Invariants
+
+Every authenticated user must have:
+
+- One profile record.
+- At least one assigned role.
+
+Every role may have:
+
+- Zero or more assigned permissions.
+
+Permissions are assigned to roles, never directly to users.
+
+Missing profiles or roles are treated as data integrity errors rather than valid application states.
