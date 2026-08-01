@@ -1,10 +1,5 @@
 import "./globals.css";
 
-import AppLayout from "@/components/layout/AppLayout";
-
-import navigation from "./config/navigation";
-import themes from "./config/theme";
-import layout from "./config/layout";
 import { LayoutProvider } from "@/context/LayoutContext";
 import { Toaster } from "sonner";
 
@@ -18,19 +13,13 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <LayoutProvider>
-          <AppLayout
-  navigation={navigation}
-  theme={themes.light}
-  layout={layout}
->
-  {children}
-</AppLayout>
+          {children}
 
-<Toaster
-  position="bottom-right"
-  richColors
-  closeButton
-/>
+          <Toaster
+            position="bottom-right"
+            richColors
+            closeButton
+          />
         </LayoutProvider>
       </body>
     </html>
