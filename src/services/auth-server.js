@@ -49,11 +49,15 @@ export async function getCurrentAuth() {
   const profile = await getCurrentProfile(user.id);
   const roles = await getCurrentRoles(user.id);
 
+  const roleIds = roles.map(({ id }) => id);
+
+  const permissions = await getCurrentPermissions(roleIds);
+
   return {
     user,
     profile,
     roles,
-    permissions: [],
+    permissions,
   };
 }
 
@@ -104,4 +108,33 @@ export async function getCurrentRoles(userId) {
   }
 
   return roles;
+}
+
+/* ==========================================================================
+   PERMISSIONS
+   ========================================================================== */
+
+export async function getCurrentPermissions(roleIds) {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("role_permissions")
+    .select(`
+      permissions (
+        name
+      )
+    `)
+    .in("role_id", roleIds);
+
+  if (error) {
+    throw error;
+  }
+
+  return [
+    ...new Set(
+      data
+        .map(({ permissions }) => permissions?.name)
+        .filter(Boolean)
+    ),
+  ];
 }
