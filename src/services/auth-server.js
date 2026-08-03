@@ -61,6 +61,24 @@ export async function getCurrentAuth() {
   };
 }
 
+/* ==========================================================================
+   AUTHORIZATION
+   ========================================================================== */
+
+import { notFound } from "next/navigation";
+
+export async function requirePermission(permission) {
+  const auth = await getCurrentAuth();
+
+  const hasPermission = auth.permissions.includes(permission);
+
+  if (!hasPermission) {
+    notFound();
+  }
+
+  return auth;
+}
+
 export async function getCurrentProfile(userId) {
   const supabase = await createClient();
 
