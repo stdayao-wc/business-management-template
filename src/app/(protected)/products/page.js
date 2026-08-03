@@ -16,6 +16,7 @@ import { useEffect, useState } from "react";
 import ItemCard from "@/components/inventory/ItemCard";
 import ItemGrid from "@/components/inventory/ItemGrid";
 import ProductDialog from "@/components/inventory/ProductDialog";
+import { useAuth } from "@/context/AuthContext";
 
 import { toast } from "sonner";
 
@@ -84,6 +85,8 @@ export default function ProductsPage(){
         loadProducts();
     }, []);
 
+    const { can } = useAuth();
+
     return (
         <div className="space-y-10">
 
@@ -106,13 +109,14 @@ export default function ProductsPage(){
                     <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
                         Generators
                     </button>
-
+                {can("products.create") && (
                     <button
                         onClick={handleAddProduct}
                         className="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
                     >
                         Add Product
                     </button>
+                )}
 
                 </div>
 

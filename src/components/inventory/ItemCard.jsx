@@ -2,6 +2,8 @@ import Image from "next/image";
 
 import StatusPill from "./StatusPill";
 
+import { useAuth } from "@/context/AuthContext";
+
 export default function ItemCard({
   mode = "catalog",
 
@@ -17,6 +19,9 @@ export default function ItemCard({
 }) {
   const isCatalog = mode === "catalog";
   const isInventory = mode === "inventory";
+  const { can } = useAuth();
+  const canEdit = can("products.update");
+  const canDelete = can("products.delete");
 
   return (
     <div className="flex flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-shadow hover:shadow-md">
@@ -88,6 +93,7 @@ export default function ItemCard({
           <div className="flex gap-2">
             {isCatalog && (
               <div className="flex gap-2">
+                {canEdit && (
                 <button
                   type="button"
                   onClick={() => onEdit?.(product)}
@@ -95,7 +101,8 @@ export default function ItemCard({
                 >
                   Edit
                 </button>
-
+                )}
+              {canDelete && (
                 <button
                   type="button"
                   onClick={() => onDelete?.(product)}
@@ -103,6 +110,7 @@ export default function ItemCard({
                 >
                   Delete
                 </button>
+              )}
               </div>
             )}
           </div>
