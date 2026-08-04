@@ -1,5 +1,11 @@
 import { supabase } from "@/lib/supabase/client";
 
+import {
+    getAvailableInventoryItems,
+    sellInventoryItems,
+    updateProductStock,
+} from "./inventory";
+
 /**
  * Calculate cart totals.
  */
@@ -19,7 +25,7 @@ export function calculateTotals(cart) {
 /**
  * Validate cart before checkout.
  */
-export function validateCart(cart) {
+export async function validateCart(cart) {
     if (!cart.length) {
         return {
             valid: false,
@@ -32,6 +38,19 @@ export function validateCart(cart) {
             return {
                 valid: false,
                 message: `${item.product.name} has an invalid quantity.`,
+            };
+        }
+
+        const availableItems =
+            await getAvailableInventoryItems(
+                item.product.id,
+                item.quantity
+            );
+
+        if (availableItems.length < item.quantity) {
+            return {
+                valid: false,
+                message: `Not enough stock for ${item.product.name}.`,
             };
         }
     }
@@ -132,7 +151,7 @@ export async function checkout({
     changeGiven,
     notes = "",
 }) {
-    const validation = validateCart(cart);
+    const validation = await validateCart(cart);
 
     if (!validation.valid) {
         throw new Error(validation.message);
@@ -151,5 +170,53 @@ export async function checkout({
 
     await createSaleItems(sale.id, cart);
 
+    for (const item of cart) {
+        const inventoryItems =
+            await getAvailableInventoryItems(
+                item.product.id,
+                item.quantity
+            );
+
+        await sellInventoryItems(inventoryItems);
+
+        await updateProductStock(item.product.id);
+    }
+
     return sale;
 }
+
+export async function validateCart(cart) {
+    if (!cart.length) {
+        return {
+            valid: false,
+            message: "Cart is empty.",
+        };
+    }
+
+    for (const item of cart) {
+        if (item.quantity <= 0) {
+            return {
+                valid: false,
+                message: `${item.product.name} has an invalid quantity.`,
+            };
+        }
+
+        const availableItems =
+            await getAvailableInventoryItems(
+                item.product.id,
+                item.quantity
+            );
+
+        if (availableItems.length < item.quantity) {
+            return {
+                valid: false,
+                message: `Not enough stock for ${item.product.name}.`,
+            };
+        }
+    }
+
+    return {
+        valid: true,
+    };
+}
+

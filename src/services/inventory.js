@@ -223,3 +223,85 @@ export async function damageStock({
             INVENTORY_ITEM_STATUSES.DAMAGED,
     });
 }
+
+/**
+ * Returns the available stock for a product.
+ */
+export async function getAvailableStock(productId) {
+    const { count, error } = await supabase
+        .from("inventory_items")
+        .select("*", {
+            count: "exact",
+            head: true,
+        })
+        .eq("product_id", productId)
+        .eq("status", "Available");
+
+    if (error) {
+        throw error;
+    }
+
+    return count ?? 0;
+}
+
+/**
+ * Gets inventory items that can be sold.
+ */
+export async function getAvailableInventoryItems(
+    productId,
+    quantity
+) {
+    const { data, error } = await supabase
+        .from("inventory_items")
+        .select("*")
+        .eq("product_id", productId)
+        .eq("status", "Available")
+        .limit(quantity);
+
+    if (error) {
+        throw error;
+    }
+
+    if (data.length < quantity) {
+        throw new Error("Not enough stock.");
+    }
+
+    return data;
+}
+
+/**
+ * Marks inventory items as sold.
+ */
+export async function sellInventoryItems(items) {
+    const ids = items.map(item => item.id);
+
+    const { error } = await supabase
+        .from("inventory_items")
+        .update({
+            status: "Sold",
+            sold_at: new Date().toISOString(),
+        })
+        .in("id", ids);
+
+    if (error) {
+        throw error;
+    }
+}
+
+/**
+ * Synchronizes product stock with inventory.
+ */
+export async function updateProductStock(productId) {
+    const stock = await getAvailableStock(productId);
+
+    const { error } = await supabase
+        .from("products")
+        .update({
+            stock,
+        })
+        .eq("id", productId);
+
+    if (error) {
+        throw error;
+    }
+}
