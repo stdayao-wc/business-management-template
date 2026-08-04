@@ -45,9 +45,44 @@ Implemented
 - Logout
 - Supabase Auth
 - Session cookies via @supabase/ssr
+- Middleware session refresh
+- Protected routes
+- Protected layouts
+- Server-side authentication service
+- AuthProvider
+- Session validation
+- Role loading
+- Permission loading
+
+Current authentication flow
+
+```
+Browser
+
+↓
+
+Middleware
+
+↓
+
+Protected Layout
+
+↓
+
+Server Authentication
+
+↓
+
+AuthProvider
+
+↓
+
+Client Components
+```
 
 Current implementation
 
+```
 auth.users
 
 ↓
@@ -62,22 +97,60 @@ user_roles
 
 roles
 
-Current limitations
+↓
 
-- Protected routes not implemented
-- Middleware only refreshes sessions
-- Session validation not enforced
-- Sidebar still visible while logged out
-- Pages can be visited without authentication
-- RBAC not yet implemented
+role_permissions
+
+↓
+
+permissions
+```
+
+Current authentication context
+
+```
+{
+    user,
+    profile,
+    roles,
+    permissions,
+    can()
+}
+```
+
+Current authentication services
+
+```
+getCurrentUser()
+
+getCurrentSession()
+
+getCurrentProfile()
+
+getCurrentRoles()
+
+getCurrentPermissions()
+
+getCurrentAuth()
+
+requirePermission()
+```
+
+Authentication invariants
+
+Every authenticated user must have
+
+- One profile
+- At least one assigned role
+
+Missing profiles or roles are treated as data integrity errors rather than valid application states.
+
+Permissions may legitimately be empty.
 
 Future work
 
-- Protected layouts
-- Public layouts
-- Session validation
-- Route guards
-- AuthProvider
+- Service-layer authorization
+- Administration module
 
 ---
 
@@ -223,22 +296,7 @@ Supabase default triggers only.
 
 ## Current Design
 
-auth.users
-
-↓
-
-profiles
-
-↓
-
-user_roles
-
-↓
-
-roles
-
-## Planned Design
-
+```
 auth.users
 
 ↓
@@ -260,37 +318,147 @@ role_permissions
 ↓
 
 permissions
+```
 
 Frontend
 
 ↓
 
+```
 can(permission)
+```
 
 instead of
 
-role == "Admin"
+```
+role === "Admin"
+```
 
+Server
+
+↓
+
+```
+requirePermission(permission)
+```
+
+instead of checking permissions inside client pages.
+
+---
+
+## Current Roles
+
+Current roles
+
+```
+Admin
+
+Manager
+
+Employee
+```
+
+Current implementation
+
+Admin
+
+- Full system access
+
+Employee
+
+- Inventory
+- POS
+
+Manager
+
+- Reserved for future implementation
+
+---
+
+## Current Permission Catalog
+
+Dashboard
+
+```
+dashboard.read
+```
+
+Products
+
+```
+products.read
+products.create
+products.update
+products.delete
+```
+
+Inventory
+
+```
+inventory.read
+inventory.receive
+inventory.ship
+inventory.reserve
+inventory.damage
+```
+
+POS
+
+```
+pos.read
+pos.sell
+pos.discount
+pos.refund
+```
+
+---
+
+## Current Authorization Architecture
+
+Authorization happens in two layers.
+
+Server
+
+```
+requirePermission(permission)
+```
+
+Responsible for
+
+- Page authorization
+- Preventing unauthorized pages from rendering
+
+Client
+
+```
+can(permission)
+```
+
+Responsible for
+
+- UI authorization
+- Showing and hiding actions
+
+Future
+
+Service authorization
+
+will validate permissions before database mutations.
 ---
 
 # Future Improvements
 
 Authentication
 
-- Protected routes
-- Middleware redirects
-- AuthProvider
-- Session persistence
-- Public layouts
-- Protected layouts
+- Service authorization
+- Automatic profile creation trigger
+- Automatic default role assignment
 
 Authorization
 
-- permissions table
-- role_permissions table
-- Permission hooks
-- UI authorization
-- Service authorization
+- Administration module
+- Role editor
+- Permission management UI
 
 Database
 
@@ -298,6 +466,21 @@ Database
 - Database functions
 - Shared user profile view
 
+Optimization
+
+- Permission constants
+
+```
+PERMISSIONS.PRODUCTS.CREATE
+```
+
+instead of
+
+```
+"products.create"
+```
+
+after additional modules adopt RBAC.
 ---
 
 # Planned Database View
@@ -446,17 +629,95 @@ Composite Key
 - Supports sharing the same permission across multiple roles.
 - Mirrors the design of `user_roles` for consistency.
 
-## Authentication Invariants
+# Current Architecture Conventions
 
-Every authenticated user must have:
+Authentication
 
-- One profile record.
-- At least one assigned role.
+Middleware owns authentication.
 
-Every role may have:
+Protected layouts own authenticated application state.
 
-- Zero or more assigned permissions.
+Server pages own authorization.
 
-Permissions are assigned to roles, never directly to users.
+Client pages own rendering.
 
-Missing profiles or roles are treated as data integrity errors rather than valid application states.
+Authentication Context
+
+The application should consume authentication only through
+
+```
+useAuth()
+```
+
+Components should always use
+
+```
+can(permission)
+```
+
+instead of inspecting the permissions array directly.
+
+Authorization
+
+Server pages should authorize modules using
+
+```
+requirePermission(permission)
+```
+
+before rendering client pages.
+
+Project Convention
+
+Every protected module should follow
+
+```
+module/
+
+page.js
+
+ModulePage.jsx
+```
+
+Responsibilities
+
+page.js
+
+- Server component
+- Authorization
+- Server orchestration
+- Future server-side data loading
+
+ModulePage.jsx
+
+- Client component
+- State
+- Hooks
+- Events
+- Rendering
+
+Components
+
+Components own authorization for their own UI.
+
+Pages should not pass permission booleans to components.
+
+Example
+
+```
+ItemCard
+
+↓
+
+useAuth()
+
+↓
+
+can("products.update")
+```
+
+rather than
+
+```
+< ItemCard canEdit={...} />
+```
