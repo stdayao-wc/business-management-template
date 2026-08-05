@@ -1,6 +1,8 @@
 import { supabase } from "@/lib/supabase/client";
+import { getProducts } from "./products";
 
 import {
+    getAvailableStock,
     getAvailableInventoryItems,
     sellInventoryItems,
     updateProductStock,
@@ -9,6 +11,45 @@ import {
 /**
  * Calculate cart totals.
  */
+
+export const INVENTORY_STATUS = {
+    IN_STOCK: "IN_STOCK",
+    RESERVED: "RESERVED",
+    SOLD: "SOLD",
+    PACKED: "PACKED",
+    SHIPPED: "SHIPPED",
+    DELIVERED: "DELIVERED",
+    RETURNED: "RETURNED",
+    DAMAGED: "DAMAGED",
+    LOST: "LOST",
+};
+
+const statusCache = {};
+
+/**
+ * Returns the UUID for an inventory status.
+ * Status IDs are cached after the first lookup.
+ */
+export async function getInventoryStatusId(statusName) {
+    if (statusCache[statusName]) {
+        return statusCache[statusName];
+    }
+
+    const { data, error } = await supabase
+        .from("inventory_item_statuses")
+        .select("id")
+        .eq("name", statusName)
+        .single();
+
+    if (error) {
+        throw error;
+    }
+
+    statusCache[statusName] = data.id;
+
+    return data.id;
+}
+
 export function calculateTotals(cart) {
     let subtotal = 0;
 
@@ -185,38 +226,51 @@ export async function checkout({
     return sale;
 }
 
-export async function validateCart(cart) {
-    if (!cart.length) {
-        return {
-            valid: false,
-            message: "Cart is empty.",
-        };
+export async function getAvailableStockMap() {
+    const inStockStatusId =
+        await getInventoryStatusId(INVENTORY_STATUS.IN_STOCK);
+
+    const { data, error } = await supabase
+        .from("inventory_items")
+        .select("product_id")
+        .eq("status_id", inStockStatusId);
+
+    if (error) {
+        throw error;
     }
 
-    for (const item of cart) {
-        if (item.quantity <= 0) {
-            return {
-                valid: false,
-                message: `${item.product.name} has an invalid quantity.`,
-            };
-        }
+    const stockMap = {};
 
-        const availableItems =
-            await getAvailableInventoryItems(
-                item.product.id,
-                item.quantity
-            );
-
-        if (availableItems.length < item.quantity) {
-            return {
-                valid: false,
-                message: `Not enough stock for ${item.product.name}.`,
-            };
-        }
+    for (const item of data) {
+        stockMap[item.product_id] =
+            (stockMap[item.product_id] ?? 0) + 1;
     }
 
-    return {
-        valid: true,
-    };
+    return stockMap;
 }
 
+/**
+ * Returns products prepared for the POS.
+ *
+ * The POS should display all active products,
+ * including those that are currently out of stock.
+ */
+export async function getPOSProducts() {
+    const [products, stockMap] = await Promise.all([
+        getProducts(),
+        getAvailableStockMap(),
+    ]);
+
+    return products.map(product => {
+        const availableStock =
+            stockMap[product.id] ?? 0;
+
+        return {
+            ...product,
+
+            available_stock: availableStock,
+
+            is_out_of_stock: availableStock === 0,
+        };
+    });
+}

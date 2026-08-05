@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-import { getProducts } from "@/services/products";
+import { getPOSProducts } from "@/services/pos";
 
 import ProductSearch from "@/components/pos/ProductSearch";
 import ProductGrid from "@/components/pos/ProductGrid";
@@ -18,7 +18,7 @@ export default function POSPage() {
 
     async function loadProducts() {
         try {
-            const data = await getProducts();
+            const data = await getPOSProducts();
             setProducts(data);
         } finally {
             setLoading(false);

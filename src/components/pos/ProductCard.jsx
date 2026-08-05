@@ -1,8 +1,6 @@
 import Image from "next/image";
 
-export default function ProductCard({
-    product,
-}) {
+export default function ProductCard({ product }) {
     return (
         <div className="rounded-lg border p-4">
 
@@ -11,7 +9,7 @@ export default function ProductCard({
                 alt={product.name}
                 width={150}
                 height={150}
-                className="mx-auto"
+                className="mx-auto h-auto"
             />
 
             <h3 className="mt-4 font-semibold">
@@ -22,12 +20,20 @@ export default function ProductCard({
                 SKU: {product.sku}
             </p>
 
-            <p className="mt-2 font-bold">
-                ₱{product.selling_price}
+            <p className="mt-2 text-lg font-bold">
+                ₱{Number(product.selling_price).toFixed(2)}
             </p>
 
-            <p className="text-sm">
-                Stock: {product.stock}
+            <p
+                className={`mt-2 text-sm font-medium ${
+                    product.is_out_of_stock
+                        ? "text-red-600"
+                        : "text-green-600"
+                }`}
+            >
+                {product.is_out_of_stock
+                    ? "Out of Stock"
+                    : `${product.available_stock} in stock`}
             </p>
 
         </div>
