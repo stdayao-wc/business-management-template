@@ -2,16 +2,20 @@
 
 import { useEffect, useState } from "react";
 
-import { getPOSProducts } from "@/services/pos";
-
 // import ProductSearch from "@/components/pos/ProductSearch";
 import ProductGrid from "@/components/pos/ProductGrid";
 import CartPanel from "@/components/pos/CartPanel";
+
+import {
+    getPOSProducts,
+    calculateTotals,
+} from "@/services/pos";
 
 export default function POSPage() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [cart, setCart] = useState([]);
+    const totals = calculateTotals(cart);
 
     useEffect(() => {
         loadProducts();
@@ -72,6 +76,7 @@ export default function POSPage() {
 
                 <CartPanel
                     cart={cart}
+                    totals={totals}
                 />
 
             </div>

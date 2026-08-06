@@ -1,4 +1,10 @@
-export default function CartPanel({ cart = [] }) {
+import CartItem from "./CartItem";
+import CartSummary from "./CartSummary";
+
+export default function CartPanel({
+    cart = [],
+    totals,
+}) {
     return (
         <div className="rounded-lg border p-4">
 
@@ -12,31 +18,22 @@ export default function CartPanel({ cart = [] }) {
                 </p>
             ) : (
                 <>
-                    {cart.map(item => (
-                        <div
-                            key={item.product.id}
-                            className="mb-4 border-b pb-3"
-                        >
-                            <div className="flex justify-between">
-                                <div>
-                                    <p className="font-medium">
-                                        {item.product.name}
-                                    </p>
+                    <div className="space-y-3">
 
-                                    <p className="text-sm text-gray-500">
-                                        Qty: {item.quantity}
-                                    </p>
-                                </div>
+                        {cart.map(item => (
+                            <CartItem
+                                key={item.product.id}
+                                item={item}
+                            />
+                        ))}
 
-                                <p className="font-semibold">
-                                    ₱{(
-                                        item.product.selling_price *
-                                        item.quantity
-                                    ).toFixed(2)}
-                                </p>
-                            </div>
-                        </div>
-                    ))}
+                    </div>
+
+                    <CartSummary
+                        cart={cart}
+                        totals={totals}
+                    />
+
                 </>
             )}
 
