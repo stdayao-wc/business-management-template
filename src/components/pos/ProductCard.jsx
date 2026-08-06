@@ -1,6 +1,9 @@
 import Image from "next/image";
 
-export default function ProductCard({ product }) {
+export default function ProductCard({
+    product,
+    onAddToCart,
+}) {
     return (
         <div className="rounded-lg border p-4">
 
@@ -35,6 +38,14 @@ export default function ProductCard({ product }) {
                     ? "Out of Stock"
                     : `${product.available_stock} in stock`}
             </p>
+
+            <button
+                onClick={() => onAddToCart(product)}
+                disabled={product.is_out_of_stock}
+                className="mt-4 w-full rounded-md bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-400"
+            >
+                Add to Cart
+            </button>
 
         </div>
     );

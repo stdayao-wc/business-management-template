@@ -3,6 +3,7 @@ import ProductCard from "./ProductCard";
 export default function ProductGrid({
     products,
     loading,
+    onAddToCart,
 }) {
     if (loading) {
         return (
@@ -26,6 +27,7 @@ export default function ProductGrid({
                 <ProductCard
                     key={product.id}
                     product={product}
+                    onAddToCart={onAddToCart}
                 />
             ))}
         </div>
