@@ -9,10 +9,12 @@ import CartPanel from "@/components/pos/CartPanel";
 import { getPOSProducts } from "@/services/pos";
 
 import { useCart } from "@/hooks/useCart";
+import CheckoutDialog from "@/components/pos/CheckoutDialog";
 
 export default function POSPage() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [checkoutOpen, setCheckoutOpen] = useState(false);
 
     const {
         cart,
@@ -62,8 +64,19 @@ export default function POSPage() {
                     onIncreaseQuantity={increaseQuantity}
                     onDecreaseQuantity={decreaseQuantity}
                     onRemoveItem={removeItem}
+                    onCheckout={() => setCheckoutOpen(true)}
                 />
             </div>
+
+            <CheckoutDialog
+                open={checkoutOpen}
+                totals={totals}
+                onClose={() => setCheckoutOpen(false)}
+                onConfirm={(payment) => {
+                    console.log(payment);
+                    setCheckoutOpen(false);
+                }}
+            />
 
         </div>
     );

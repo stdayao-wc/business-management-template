@@ -7,6 +7,7 @@ export default function CartPanel({
     onIncreaseQuantity,
     onDecreaseQuantity,
     onRemoveItem,
+    onCheckout,
 }) {
     return (
         <div className="rounded-lg border p-4">
@@ -38,6 +39,7 @@ export default function CartPanel({
                     <CartSummary
                         cart={cart}
                         totals={totals}
+                        onCheckout={onCheckout}
                     />
 
                 </>

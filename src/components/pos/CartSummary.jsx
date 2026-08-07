@@ -1,6 +1,7 @@
 export default function CartSummary({
     cart,
     totals,
+    onCheckout,
 }) {
     const itemCount = cart.reduce(
         (sum, item) => sum + item.quantity,
@@ -28,6 +29,13 @@ export default function CartSummary({
                     ₱{totals.total.toFixed(2)}
                 </span>
             </div>
+
+            <button
+                onClick={onCheckout}
+                className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700"
+            >
+                Checkout
+            </button>
 
         </div>
     );
