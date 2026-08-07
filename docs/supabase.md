@@ -184,13 +184,52 @@ Relationships
 
 ### inventory_items
 
-...
+Additional Columns
+
+| Column | Type |
+|---------|------|
+| sold_at | timestamptz |
+
+**Purpose**
+
+Records when an inventory item was sold.
+
+This enables future reporting and inventory history while preserving immutable inventory events.
 
 ---
 
 ### inventory_item_statuses
 
-...
+**Purpose**
+
+Defines the lifecycle of every physical inventory item.
+
+Inventory items reference a status through `status_id` rather than storing status text directly.
+
+This normalization allows the application to evolve inventory workflows without modifying inventory records.
+
+**Current Statuses**
+
+```
+IN_STOCK
+
+RESERVED
+
+SOLD
+
+PACKED
+
+SHIPPED
+
+DELIVERED
+
+RETURNED
+
+DAMAGED
+
+LOST
+```
+
 
 ---
 
@@ -227,6 +266,21 @@ Relationships
 # Relationships
 
 (ERD / relationship summary)
+
+---
+```
+inventory_items.status_id
+
+↓
+
+inventory_item_statuses.id
+```
+
+**Notes**
+
+- Inventory services should always reference statuses by name and resolve the UUID internally.
+- Application code should never hardcode status UUIDs.
+- The Inventory service owns status lookup and caching.
 
 ---
 
@@ -283,6 +337,51 @@ Automatic default role assignment
 Permission helper functions
 
 ---
+
+---
+
+# Checkout Architecture
+
+## Current Design
+
+Checkout currently consists of multiple database operations.
+
+```
+Create Sale
+
+↓
+
+Create Sale Items
+
+↓
+
+Update Inventory Items
+
+↓
+
+Update Product Stock
+```
+
+Current implementation performs these operations through multiple Supabase queries.
+
+## Future Direction
+
+Checkout will eventually become a PostgreSQL RPC function.
+
+Benefits
+
+- Single database transaction
+- Automatic rollback
+- Better consistency
+- Fewer network round trips
+
+The frontend service interface should remain:
+
+```
+checkout(...)
+```
+
+Only the underlying implementation should change.
 
 # Triggers
 
@@ -463,8 +562,10 @@ Authorization
 Database
 
 - Audit logs
-- Database functions
+- Checkout PostgreSQL RPC
+- Automatic profile creation trigger
 - Shared user profile view
+- Inventory summary views
 
 Optimization
 
@@ -645,6 +746,26 @@ Authentication Context
 
 The application should consume authentication only through
 
+Pages should orchestrate state through custom hooks.
+
+Business logic should remain in services.
+
+Example
+
+```
+POSPage
+
+↓
+
+useCart()
+
+↓
+
+Cart Components
+```
+
+rather than placing complex state manipulation directly inside page components.
+
 ```
 useAuth()
 ```
@@ -721,3 +842,67 @@ rather than
 ```
 < ItemCard canEdit={...} />
 ```
+
+---
+
+# Inventory Architecture
+
+The inventory module is the source of truth for stock.
+
+Product stock is considered derived data.
+
+```
+inventory_items
+
+↓
+
+Inventory Services
+
+↓
+
+products.stock (cached)
+
+↓
+
+POS
+
+↓
+
+Inventory
+```
+
+The POS should calculate available inventory from inventory items rather than relying solely on the cached product stock value.
+
+Future optimizations may introduce database views to aggregate inventory counts.
+
+---
+
+# Planned Database Views
+
+...
+
+Additional planned views
+
+## product_inventory_summary
+
+Purpose
+
+Provide a pre-aggregated inventory summary for modules such as:
+
+- POS
+- Inventory Dashboard
+- Reports
+
+Possible output
+
+```
+product_id
+
+available_stock
+
+reserved_stock
+
+damaged_stock
+```
+
+This view is intended as a future optimization once reporting requirements increase.

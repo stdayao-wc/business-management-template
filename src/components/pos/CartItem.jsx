@@ -18,7 +18,7 @@ export default function CartItem({
                         {item.product.name}
                     </p>
 
-                    <p className="text-sm text-gray-500">
+                    {/* <p className="text-sm text-gray-500"> */}
                         <div className="mt-2 flex items-center gap-2">
 
                             <button
@@ -46,9 +46,14 @@ export default function CartItem({
                             >
                                 +
                             </button>
-
+                            <button
+                                onClick={() => onRemoveItem(item.product.id)}
+                                className="mt-2 text-sm text-red-600 hover:underline"
+                            >
+                                Remove
+                            </button>
                         </div>
-                    </p>
+                    {/* </p> */}
 
                     <p className="text-sm text-gray-500">
                         ₱{Number(item.product.selling_price).toFixed(2)} each
@@ -57,7 +62,7 @@ export default function CartItem({
                 </div>
 
                 <p className="font-semibold">
-                    ₱{lineTotal.toFixed(2)}
+                    ₱{Number(lineTotal).toFixed(2)}
                 </p>
 
             </div>
