@@ -6,16 +6,24 @@ import { useEffect, useState } from "react";
 import ProductGrid from "@/components/pos/ProductGrid";
 import CartPanel from "@/components/pos/CartPanel";
 
-import {
-    getPOSProducts,
-    calculateTotals,
-} from "@/services/pos";
+import { getPOSProducts } from "@/services/pos";
+
+import { useCart } from "@/hooks/useCart";
 
 export default function POSPage() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [cart, setCart] = useState([]);
-    const totals = calculateTotals(cart);
+
+    const {
+        cart,
+        totals,
+
+        addToCart,
+        increaseQuantity,
+        decreaseQuantity,
+        removeItem,
+    } = useCart();
+
 
     useEffect(() => {
         loadProducts();
@@ -30,37 +38,6 @@ export default function POSPage() {
         }
     }
 
-    function handleAddToCart(product) {
-        setCart(current => {
-            const existing = current.find(
-                item => item.product.id === product.id
-            );
-
-            if (existing) {
-                if (existing.quantity >= product.available_stock) {
-                    return current;
-                }
-
-                return current.map(item =>
-                    item.product.id === product.id
-                        ? {
-                            ...item,
-                            quantity: item.quantity + 1,
-                        }
-                        : item
-                );
-            }
-
-            return [
-                ...current,
-                {
-                    product,
-                    quantity: 1,
-                },
-            ];
-        });
-    }
-
     return (
         <div className="grid grid-cols-12 gap-6">
 
@@ -71,18 +48,21 @@ export default function POSPage() {
                 <ProductGrid
                     products={products}
                     loading={loading}
-                    onAddToCart={handleAddToCart}
+                    onAddToCart={addToCart}
                 />
 
-                <CartPanel
-                    cart={cart}
-                    totals={totals}
-                />
+                
 
             </div>
 
             <div className="col-span-4">
-                <CartPanel />
+                <CartPanel
+                    cart={cart}
+                    totals={totals}
+                    onIncreaseQuantity={increaseQuantity}
+                    onDecreaseQuantity={decreaseQuantity}
+                    onRemoveItem={removeItem}
+                />
             </div>
 
         </div>

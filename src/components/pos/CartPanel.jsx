@@ -4,6 +4,9 @@ import CartSummary from "./CartSummary";
 export default function CartPanel({
     cart = [],
     totals,
+    onIncreaseQuantity,
+    onDecreaseQuantity,
+    onRemoveItem,
 }) {
     return (
         <div className="rounded-lg border p-4">
@@ -24,6 +27,9 @@ export default function CartPanel({
                             <CartItem
                                 key={item.product.id}
                                 item={item}
+                                onIncreaseQuantity={onIncreaseQuantity}
+                                onDecreaseQuantity={onDecreaseQuantity}
+                                onRemoveItem={onRemoveItem}
                             />
                         ))}
 

@@ -1,4 +1,9 @@
-export default function CartItem({ item }) {
+export default function CartItem({
+    item,
+    onIncreaseQuantity,
+    onDecreaseQuantity,
+    onRemoveItem,
+}){
     const lineTotal =
         item.product.selling_price * item.quantity;
 
@@ -14,7 +19,35 @@ export default function CartItem({ item }) {
                     </p>
 
                     <p className="text-sm text-gray-500">
-                        Qty: {item.quantity}
+                        <div className="mt-2 flex items-center gap-2">
+
+                            <button
+                                onClick={() =>
+                                    onDecreaseQuantity(item.product.id)
+                                }
+                                className="h-8 w-8 rounded border"
+                            >
+                                −
+                            </button>
+
+                            <span className="w-8 text-center">
+                                {item.quantity}
+                            </span>
+
+                            <button
+                                onClick={() =>
+                                    onIncreaseQuantity(item.product.id)
+                                }
+                                disabled={
+                                    item.quantity >=
+                                    item.product.available_stock
+                                }
+                                className="h-8 w-8 rounded border disabled:opacity-50"
+                            >
+                                +
+                            </button>
+
+                        </div>
                     </p>
 
                     <p className="text-sm text-gray-500">
