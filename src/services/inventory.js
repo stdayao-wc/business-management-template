@@ -6,8 +6,13 @@ const STATUS_TABLE = "inventory_item_statuses";
 const PRODUCTS_TABLE = "products";
 
 const ITEM_CODE_PADDING = 6;
+const statusCache = {};
 
 async function getInventoryStatus(statusName) {
+    if (statusCache[statusName]) {
+        return statusCache[statusName];
+    }
+
     const { data, error } = await supabase
         .from(STATUS_TABLE)
         .select("id, name")
@@ -15,6 +20,8 @@ async function getInventoryStatus(statusName) {
         .single();
 
     if (error) throw error;
+
+    statusCache[statusName] = data;
 
     return data;
 }
@@ -228,17 +235,18 @@ export async function damageStock({
  * Returns the available stock for a product.
  */
 export async function getAvailableStock(productId) {
-    const inStockStatusId =
-        await getInventoryStatusId(INVENTORY_STATUS.IN_STOCK);
+    const inStockStatus = await getInventoryStatus(
+        INVENTORY_ITEM_STATUSES.IN_STOCK
+    );
 
     const { count, error } = await supabase
-        .from("inventory_items")
+        .from(INVENTORY_TABLE)
         .select("*", {
             count: "exact",
             head: true,
         })
         .eq("product_id", productId)
-        .eq("status_id", inStockStatusId);
+        .eq("status_id", inStockStatus.id);
 
     if (error) {
         throw error;
@@ -254,14 +262,16 @@ export async function getAvailableInventoryItems(
     productId,
     quantity
 ) {
-    const inStockStatusId =
-    await getInventoryStatusId(INVENTORY_STATUS.IN_STOCK);
+    const inStockStatus = await getInventoryStatus(
+        INVENTORY_ITEM_STATUSES.IN_STOCK
+    );
 
     const { data, error } = await supabase
-        .from("inventory_items")
+        .from(INVENTORY_TABLE)
         .select("*")
         .eq("product_id", productId)
-        .eq("status_id", inStockStatusId)
+        .eq("status_id", inStockStatus.id)
+        .order("id")
         .limit(quantity);
 
     if (error) {
@@ -279,15 +289,16 @@ export async function getAvailableInventoryItems(
  * Marks inventory items as sold.
  */
 export async function sellInventoryItems(items) {
-    const soldStatusId =
-        await getInventoryStatusId(INVENTORY_STATUS.SOLD);
+    const soldStatus = await getInventoryStatus(
+        INVENTORY_ITEM_STATUSES.SOLD
+    );
 
-    const ids = items.map(item => item.id);
+    const ids = items.map((item) => item.id);
 
     const { error } = await supabase
-        .from("inventory_items")
+        .from(INVENTORY_TABLE)
         .update({
-            status_id: soldStatusId,
+            status_id: soldStatus.id,
             sold_at: new Date().toISOString(),
         })
         .in("id", ids);
@@ -296,7 +307,6 @@ export async function sellInventoryItems(items) {
         throw error;
     }
 }
-
 /**
  * Synchronizes product stock with inventory.
  */
@@ -304,7 +314,7 @@ export async function updateProductStock(productId) {
     const stock = await getAvailableStock(productId);
 
     const { error } = await supabase
-        .from("products")
+        .from(PRODUCTS_TABLE)
         .update({
             stock,
         })

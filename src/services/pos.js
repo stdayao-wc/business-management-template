@@ -2,53 +2,11 @@ import { supabase } from "@/lib/supabase/client";
 import { getProducts } from "./products";
 
 import {
-    getAvailableStock,
+    getInventoryCounts,
     getAvailableInventoryItems,
     sellInventoryItems,
     updateProductStock,
 } from "./inventory";
-
-/**
- * Calculate cart totals.
- */
-
-export const INVENTORY_STATUS = {
-    IN_STOCK: "IN_STOCK",
-    RESERVED: "RESERVED",
-    SOLD: "SOLD",
-    PACKED: "PACKED",
-    SHIPPED: "SHIPPED",
-    DELIVERED: "DELIVERED",
-    RETURNED: "RETURNED",
-    DAMAGED: "DAMAGED",
-    LOST: "LOST",
-};
-
-const statusCache = {};
-
-/**
- * Returns the UUID for an inventory status.
- * Status IDs are cached after the first lookup.
- */
-export async function getInventoryStatusId(statusName) {
-    if (statusCache[statusName]) {
-        return statusCache[statusName];
-    }
-
-    const { data, error } = await supabase
-        .from("inventory_item_statuses")
-        .select("id")
-        .eq("name", statusName)
-        .single();
-
-    if (error) {
-        throw error;
-    }
-
-    statusCache[statusName] = data.id;
-
-    return data.id;
-}
 
 export function calculateTotals(cart) {
     let subtotal = 0;
@@ -226,29 +184,6 @@ export async function checkout({
     return sale;
 }
 
-export async function getAvailableStockMap() {
-    const inStockStatusId =
-        await getInventoryStatusId(INVENTORY_STATUS.IN_STOCK);
-
-    const { data, error } = await supabase
-        .from("inventory_items")
-        .select("product_id")
-        .eq("status_id", inStockStatusId);
-
-    if (error) {
-        throw error;
-    }
-
-    const stockMap = {};
-
-    for (const item of data) {
-        stockMap[item.product_id] =
-            (stockMap[item.product_id] ?? 0) + 1;
-    }
-
-    return stockMap;
-}
-
 /**
  * Returns products prepared for the POS.
  *
@@ -256,12 +191,13 @@ export async function getAvailableStockMap() {
  * including those that are currently out of stock.
  */
 export async function getPOSProducts() {
-    const [products, stockMap] = await Promise.all([
-        getProducts(),
-        getAvailableStockMap(),
-    ]);
+    const products = await getProducts();
 
-    return products.map(product => {
+    const stockMap = await getInventoryCounts(
+        products.map((product) => product.id)
+    );
+
+    return products.map((product) => {
         const availableStock =
             stockMap[product.id] ?? 0;
 
@@ -270,7 +206,8 @@ export async function getPOSProducts() {
 
             available_stock: availableStock,
 
-            is_out_of_stock: availableStock === 0,
+            is_out_of_stock:
+                availableStock === 0,
         };
     });
 }
