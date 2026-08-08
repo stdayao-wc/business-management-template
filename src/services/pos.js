@@ -5,7 +5,6 @@ import {
     getInventoryCounts,
     getAvailableInventoryItems,
     sellInventoryItems,
-    updateProductStock,
 } from "./inventory";
 
 export function calculateTotals(cart) {
@@ -177,8 +176,6 @@ export async function checkout({
             );
 
         await sellInventoryItems(inventoryItems);
-
-        await updateProductStock(item.product.id);
     }
 
     return sale;

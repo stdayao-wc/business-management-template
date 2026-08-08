@@ -12,7 +12,6 @@ async function getInventoryStatus(statusName) {
     if (statusCache[statusName]) {
         return statusCache[statusName];
     }
-
     const { data, error } = await supabase
         .from(STATUS_TABLE)
         .select("id, name")
@@ -310,17 +309,17 @@ export async function sellInventoryItems(items) {
 /**
  * Synchronizes product stock with inventory.
  */
-export async function updateProductStock(productId) {
-    const stock = await getAvailableStock(productId);
+// export async function updateProductStock(productId) {
+//     const stock = await getAvailableStock(productId);
 
-    const { error } = await supabase
-        .from(PRODUCTS_TABLE)
-        .update({
-            stock,
-        })
-        .eq("id", productId);
+//     const { error } = await supabase
+//         .from(PRODUCTS_TABLE)
+//         .update({
+//             stock,
+//         })
+//         .eq("id", productId);
 
-    if (error) {
-        throw error;
-    }
-}
+//     if (error) {
+//         throw error;
+//     }
+// }

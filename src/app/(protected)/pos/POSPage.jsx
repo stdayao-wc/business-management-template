@@ -6,16 +6,47 @@ import { useEffect, useState } from "react";
 import ProductGrid from "@/components/pos/ProductGrid";
 import CartPanel from "@/components/pos/CartPanel";
 
-import { getPOSProducts } from "@/services/pos";
+import {
+    getPOSProducts,
+    checkout,
+} from "@/services/pos";
 
 import { useCart } from "@/hooks/useCart";
 import CheckoutDialog from "@/components/pos/CheckoutDialog";
+import { useAuth } from "@/context/AuthContext";
 
 export default function POSPage() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [checkoutOpen, setCheckoutOpen] = useState(false);
+    const { user } = useAuth();
 
+    function openCheckout() {
+        setCheckoutOpen(true);
+    }
+
+    function closeCheckout() {
+        setCheckoutOpen(false);
+    }
+
+    async function handleCheckout(payment) {
+        try {
+            await checkout({
+                cashierId: user.id,
+                cart,
+                paymentMethod: payment.paymentMethod,
+                amountReceived: payment.amountReceived,
+                changeGiven: payment.changeGiven,
+                notes: payment.notes,
+            });
+
+            clearCart();
+            await loadProducts();
+            closeCheckout();
+        } catch (error) {
+            console.error("Checkout failed:", error);
+        }
+    }
     const {
         cart,
         totals,
@@ -24,6 +55,7 @@ export default function POSPage() {
         increaseQuantity,
         decreaseQuantity,
         removeItem,
+        clearCart,
     } = useCart();
 
 
@@ -64,18 +96,15 @@ export default function POSPage() {
                     onIncreaseQuantity={increaseQuantity}
                     onDecreaseQuantity={decreaseQuantity}
                     onRemoveItem={removeItem}
-                    onCheckout={() => setCheckoutOpen(true)}
+                    onCheckout={openCheckout}
                 />
             </div>
 
             <CheckoutDialog
                 open={checkoutOpen}
                 totals={totals}
-                onClose={() => setCheckoutOpen(false)}
-                onConfirm={(payment) => {
-                    console.log(payment);
-                    setCheckoutOpen(false);
-                }}
+                onClose={closeCheckout}
+                onConfirm={handleCheckout}
             />
 
         </div>

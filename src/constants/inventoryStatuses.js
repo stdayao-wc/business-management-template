@@ -1,6 +1,7 @@
 export const INVENTORY_ITEM_STATUSES = {
     IN_STOCK: "IN_STOCK",
     RESERVED: "RESERVED",
+    SOLD: "SOLD",
     SHIPPED: "SHIPPED",
     DAMAGED: "DAMAGED",
 };

@@ -18,6 +18,8 @@ export default function CheckoutDialog({
 
     const [notes, setNotes] = useState("");
 
+    const [processing, setProcessing] = useState(false);
+
     const changeGiven = useMemo(() => {
         const amount = Number(amountReceived);
 
@@ -28,13 +30,25 @@ export default function CheckoutDialog({
         return Math.max(amount - totals.total, 0);
     }, [amountReceived, totals.total]);
 
-    function handleConfirm() {
-        onConfirm({
-            paymentMethod,
-            amountReceived: Number(amountReceived),
-            changeGiven,
-            notes,
-        });
+    async function handleConfirm() {
+        if (processing) {
+            return;
+        }
+
+        setProcessing(true);
+
+        try {
+            await onConfirm({
+                paymentMethod,
+                amountReceived: Number(amountReceived),
+                changeGiven,
+                notes,
+            });
+        } catch (error) {
+            console.error("Checkout failed:", error);
+        } finally {
+            setProcessing(false);
+        }
     }
 
     return (
@@ -143,6 +157,7 @@ export default function CheckoutDialog({
 
                     <button
                         onClick={onClose}
+                        disabled={processing}
                         className="rounded-lg border px-4 py-2"
                     >
                         Cancel
@@ -151,6 +166,7 @@ export default function CheckoutDialog({
                     <button
                         onClick={handleConfirm}
                         disabled={
+                            processing ||
                             Number(amountReceived) <
                             totals.total
                         }
