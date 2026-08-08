@@ -58,12 +58,60 @@ export async function getProduct(id) {
     };
 }
 
+async function generateProductSku({
+    brandId,
+    productName,
+}) {
+    let prefix = null;
+
+    if (brandId) {
+        const { data, error } = await supabase
+            .from("brands")
+            .select("name")
+            .eq("id", brandId)
+            .single();
+
+        if (error) {
+            throw error;
+        }
+
+        prefix = data?.name;
+    }
+
+    if (!prefix) {
+        prefix = productName
+            ?.trim()
+            .split(/\s+/)[0];
+    }
+
+    prefix = prefix
+        ?.trim()
+        .split(/\s+/)[0]
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
+
+    if (!prefix) {
+        prefix = "PRD";
+    }
+
+    const { data, error } = await supabase
+        .rpc("get_next_product_sku_number");
+
+    if (error) {
+        throw error;
+    }
+
+    const sequence = String(data)
+        .padStart(6, "0");
+
+    return `${prefix}-${sequence}`;
+}  
+
 /* ==========================================================================
    CREATE
    ========================================================================== */
 
 export async function createProduct({
-    sku,
     barcode = null,
     name,
     description = null,
@@ -73,6 +121,11 @@ export async function createProduct({
     selling_price,
     image_path = null,
 }) {
+
+    const sku = await generateProductSku({
+        brandId: brand_id,
+        productName: name,
+    });
     const { data, error } = await supabase
         .from(TABLE)
         .insert({
@@ -101,7 +154,6 @@ export async function createProduct({
 export async function updateProduct(
     id,
     {
-        sku,
         barcode = null,
         name,
         description = null,
@@ -116,7 +168,6 @@ export async function updateProduct(
     const { data, error } = await supabase
         .from(TABLE)
         .update({
-            sku,
             barcode,
             name,
             description,

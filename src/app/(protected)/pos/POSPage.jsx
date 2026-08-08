@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-// import ProductSearch from "@/components/pos/ProductSearch";
+import ProductSearch from "@/components/pos/ProductSearch";
 import ProductGrid from "@/components/pos/ProductGrid";
 import CartPanel from "@/components/pos/CartPanel";
 
@@ -23,7 +23,7 @@ export default function POSPage() {
     const [checkoutOpen, setCheckoutOpen] = useState(false);
     const [receipt, setReceipt] = useState(null);
     const { user, profile } = useAuth();
-    
+    const [searchTerm, setSearchTerm] = useState("");
 
     function openCheckout() {
         setCheckoutOpen(true);
@@ -104,22 +104,39 @@ export default function POSPage() {
         }
     }
 
+const filteredProducts = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
+
+    if (!query) {
+        return products;
+    }
+
+    return products.filter((product) => {
+        return (
+            product.name?.toLowerCase().includes(query) ||
+            product.sku?.toLowerCase().includes(query) ||
+            product.barcode?.toLowerCase().includes(query)
+        );
+    });
+}, [products, searchTerm]);
+
     return (
         <div className="grid grid-cols-12 gap-6">
 
             <div className="col-span-8 space-y-4">
 
-                {/* <ProductSearch /> */}
+            <ProductSearch
+                value={searchTerm}
+                onChange={setSearchTerm}
+            />
 
-                <ProductGrid
-                    products={products}
-                    loading={loading}
-                    onAddToCart={addToCart}
-                />
+            <ProductGrid
+                products={filteredProducts}
+                loading={loading}
+                onAddToCart={addToCart}
+            />
 
-                
-
-            </div>
+        </div>
 
             <div className="col-span-4">
                 <CartPanel

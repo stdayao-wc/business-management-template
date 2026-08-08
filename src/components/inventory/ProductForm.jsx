@@ -14,7 +14,6 @@ const secondaryButtonClass =
   "rounded-lg border px-5 py-2 transition hover:bg-gray-100";
 
   const defaultForm = {
-    sku: "",
     barcode: "",
     name: "",
     description: "",
@@ -43,7 +42,6 @@ export default function ProductForm({
   useEffect(() => {
     if (product) {
       setForm({
-        sku: product.sku ?? "",
         barcode: product.barcode ?? "",
         name: product.name ?? "",
         description: product.description ?? "",
@@ -94,19 +92,7 @@ export default function ProductForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* SKU & Barcode */}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div>
-          <label className={labelClass}>SKU *</label>
-
-          <input
-            type="text"
-            name="sku"
-            value={form.sku}
-            onChange={handleChange}
-            required
-            className={fieldClass}
-          />
-        </div>
+      {/* <div className="grid gap-4 md:grid-cols-2">
 
         <div>
           <label className={labelClass}>Barcode</label>
@@ -119,7 +105,7 @@ export default function ProductForm({
             className={fieldClass}
           />
         </div>
-      </div>
+      </div> */}
 
       {/* Product Name */}
 
