@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 
 import Modal from "@/components/common/Modal";
 
@@ -19,6 +19,18 @@ export default function CheckoutDialog({
     const [notes, setNotes] = useState("");
 
     const [processing, setProcessing] = useState(false);
+
+    const [shippingMethod, setShippingMethod] =
+        useState("PICKUP");
+
+    const [customerName, setCustomerName] =
+        useState("");
+
+    const [customerPhone, setCustomerPhone] =
+        useState("");
+
+    const [shippingAddress, setShippingAddress] =
+        useState("");
 
     const changeGiven = useMemo(() => {
         const amount = Number(amountReceived);
@@ -39,6 +51,14 @@ export default function CheckoutDialog({
 
         try {
             await onConfirm({
+                shippingMethod,
+                customerName,
+                customerPhone,
+                shippingAddress:
+                    shippingMethod === "PICKUP"
+                        ? ""
+                        : shippingAddress,
+
                 paymentMethod,
                 amountReceived: Number(amountReceived),
                 changeGiven,
@@ -48,6 +68,21 @@ export default function CheckoutDialog({
             setProcessing(false);
         }
     }
+
+    useEffect(() => {
+        if (!open) {
+            return;
+        }
+
+        setShippingMethod("PICKUP");
+        setCustomerName("");
+        setCustomerPhone("");
+        setShippingAddress("");
+
+        setPaymentMethod("Cash");
+        setAmountReceived(0);
+        setNotes("");
+    }, [open, totals.total]);
 
     return (
         <Modal
@@ -98,6 +133,86 @@ export default function CheckoutDialog({
                             </option>
                         </select>
                     </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                            Shipping Method
+                        </label>
+
+                        <select
+                            value={shippingMethod}
+                            onChange={(e) =>
+                                setShippingMethod(e.target.value)
+                            }
+                            disabled={processing}
+                            className="w-full rounded-lg border px-3 py-2"
+                        >
+                            <option value="PICKUP">
+                                Pickup
+                            </option>
+
+                            <option value="LBC">
+                                LBC
+                            </option>
+
+                            <option value="J&T">
+                                J&T
+                            </option>
+                        </select>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                            Customer Name
+                        </label>
+
+                        <input
+                            type="text"
+                            value={customerName}
+                            onChange={(e) =>
+                                setCustomerName(e.target.value)
+                            }
+                            disabled={processing}
+                            className="w-full rounded-lg border px-3 py-2"
+                            placeholder="Enter customer name"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">
+                            Customer Number
+                        </label>
+
+                        <input
+                            type="tel"
+                            value={customerPhone}
+                            onChange={(e) =>
+                                setCustomerPhone(e.target.value)
+                            }
+                            disabled={processing}
+                            className="w-full rounded-lg border px-3 py-2"
+                            placeholder="Enter customer number"
+                        />
+                    </div>
+
+                    {shippingMethod !== "PICKUP" && (
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">
+                                Shipping Address
+                            </label>
+
+                            <textarea
+                                value={shippingAddress}
+                                onChange={(e) =>
+                                    setShippingAddress(e.target.value)
+                                }
+                                disabled={processing}
+                                className="w-full rounded-lg border px-3 py-2"
+                                rows={3}
+                                placeholder="Enter complete shipping address"
+                            />
+                        </div>
+                    )}
 
                     <div>
                         <label className="mb-1 block text-sm font-medium">

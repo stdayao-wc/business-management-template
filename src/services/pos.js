@@ -86,25 +86,42 @@ function generateReceiptNumber() {
 async function createSale({
     cashierId,
     totals,
+
+    shippingMethod,
+    customerName,
+    customerPhone,
+    shippingAddress,
+
     paymentMethod,
     amountReceived,
     changeGiven,
     notes,
 }) {
-    const { data, error } = await supabase
-        .from("sales")
-        .insert({
-            receipt_number: generateReceiptNumber(),
-            cashier_id: cashierId,
-            subtotal: totals.subtotal,
-            total: totals.total,
-            payment_method: paymentMethod,
-            amount_received: amountReceived,
-            change_given: changeGiven,
-            notes,
-        })
-        .select()
-        .single();
+const fulfillmentStatus =
+    getInitialFulfillmentStatus(shippingMethod);
+
+const { data, error } = await supabase
+    .from("sales")
+    .insert({
+        receipt_number: generateReceiptNumber(),
+        cashier_id: cashierId,
+
+        subtotal: totals.subtotal,
+        total: totals.total,
+
+        payment_method: paymentMethod,
+        amount_received: amountReceived,
+        change_given: changeGiven,
+        notes,
+
+        customer_name: customerName,
+        customer_phone: customerPhone,
+        shipping_address: shippingAddress,
+        shipping_method: shippingMethod,
+        fulfillment_status: fulfillmentStatus,
+    })
+    .select()
+    .single();
 
     if (error) {
         throw error;
@@ -144,6 +161,12 @@ async function createSaleItems(saleId, cart) {
 export async function checkout({
     cashierId,
     cart,
+
+    shippingMethod,
+    customerName,
+    customerPhone,
+    shippingAddress,
+
     paymentMethod = "Cash",
     amountReceived,
     changeGiven,
@@ -160,6 +183,12 @@ export async function checkout({
     const sale = await createSale({
         cashierId,
         totals,
+
+        shippingMethod,
+        customerName,
+        customerPhone,
+        shippingAddress,
+
         paymentMethod,
         amountReceived,
         changeGiven,
@@ -207,4 +236,12 @@ export async function getPOSProducts() {
                 availableStock === 0,
         };
     });
+}
+
+function getInitialFulfillmentStatus(shippingMethod) {
+    if (shippingMethod === "PICKUP") {
+        return "READY_FOR_PICKUP";
+    }
+
+    return "PENDING";
 }

@@ -38,6 +38,12 @@ export default function POSPage() {
             const sale = await checkout({
                 cashierId: user.id,
                 cart,
+
+                shippingMethod: payment.shippingMethod,
+                customerName: payment.customerName,
+                customerPhone: payment.customerPhone,
+                shippingAddress: payment.shippingAddress,
+
                 paymentMethod: payment.paymentMethod,
                 amountReceived: payment.amountReceived,
                 changeGiven: payment.changeGiven,
