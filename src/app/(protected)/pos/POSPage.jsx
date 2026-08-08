@@ -15,6 +15,7 @@ import { useCart } from "@/hooks/useCart";
 import CheckoutDialog from "@/components/pos/CheckoutDialog";
 import { useAuth } from "@/context/AuthContext";
 import ReceiptModal from "@/components/pos/ReceiptModal";
+import { toast } from "sonner";
 
 export default function POSPage() {
     const [products, setProducts] = useState([]);
@@ -54,13 +55,22 @@ export default function POSPage() {
                     .join(" "),
             });
 
-                clearCart();
-                await loadProducts();
-                closeCheckout();
-            } catch (error) {
-                console.error("Checkout failed:", error);
-            }
+            clearCart();
+            await loadProducts();
+            closeCheckout();
+
+            toast.success("Sale completed successfully.");
+        } catch (error) {
+            console.error("Checkout failed:", error);
+
+            toast.error(
+                error?.message ||
+                "Unable to complete checkout."
+            );
+
+            throw error;
         }
+    }
 
 
     const {

@@ -44,8 +44,6 @@ export default function CheckoutDialog({
                 changeGiven,
                 notes,
             });
-        } catch (error) {
-            console.error("Checkout failed:", error);
         } finally {
             setProcessing(false);
         }

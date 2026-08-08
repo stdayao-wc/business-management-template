@@ -17,6 +17,10 @@ export default function ReceiptModal({
         cashierName,
     } = receipt;
 
+    function handlePrint() {
+        window.print();
+    }
+
     return (
         <Modal
             open={open}
@@ -136,6 +140,13 @@ export default function ReceiptModal({
                         </span>
                     </div>
                 </div>
+
+                <button
+                    onClick={handlePrint}
+                    className="flex-1 rounded-lg border border-gray-300 px-4 py-3 font-medium transition hover:bg-gray-50"
+                >
+                    Print Receipt
+                </button>
 
                 <button
                     onClick={onClose}
