@@ -21,7 +21,7 @@ export default function POSPage() {
     const [loading, setLoading] = useState(true);
     const [checkoutOpen, setCheckoutOpen] = useState(false);
     const [receipt, setReceipt] = useState(null);
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
     
 
     function openCheckout() {
@@ -46,15 +46,21 @@ export default function POSPage() {
             setReceipt({
                 sale,
                 items: cart,
+                cashierName: [
+                    profile?.first_name,
+                    profile?.last_name,
+                ]
+                    .filter(Boolean)
+                    .join(" "),
             });
 
-            clearCart();
-            await loadProducts();
-            closeCheckout();
-        } catch (error) {
-            console.error("Checkout failed:", error);
+                clearCart();
+                await loadProducts();
+                closeCheckout();
+            } catch (error) {
+                console.error("Checkout failed:", error);
+            }
         }
-    }
 
 
     const {

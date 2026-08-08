@@ -11,7 +11,11 @@ export default function ReceiptModal({
         return null;
     }
 
-    const { sale, items } = receipt;
+    const {
+        sale,
+        items,
+        cashierName,
+    } = receipt;
 
     return (
         <Modal
@@ -36,6 +40,10 @@ export default function ReceiptModal({
                         {new Date(
                             sale.created_at
                         ).toLocaleString()}
+                    </p>
+
+                    <p className="text-sm text-gray-500">
+                        Cashier: {cashierName || "Unknown"}
                     </p>
                 </div>
 
