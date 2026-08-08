@@ -97,31 +97,43 @@ async function createSale({
     changeGiven,
     notes,
 }) {
-const fulfillmentStatus =
-    getInitialFulfillmentStatus(shippingMethod);
+    const fulfillmentStatus =
+        getInitialFulfillmentStatus(shippingMethod);
 
-const { data, error } = await supabase
-    .from("sales")
-    .insert({
-        receipt_number: generateReceiptNumber(),
-        cashier_id: cashierId,
+    const normalizedCustomerName =
+        customerName.trim();
 
-        subtotal: totals.subtotal,
-        total: totals.total,
+    const normalizedCustomerPhone =
+        customerPhone.trim();
 
-        payment_method: paymentMethod,
-        amount_received: amountReceived,
-        change_given: changeGiven,
-        notes,
+    const normalizedShippingAddress =
+        shippingAddress?.trim() || null;
 
-        customer_name: customerName,
-        customer_phone: customerPhone,
-        shipping_address: shippingAddress,
-        shipping_method: shippingMethod,
-        fulfillment_status: fulfillmentStatus,
-    })
-    .select()
-    .single();
+    const { data, error } = await supabase
+        .from("sales")
+        .insert({
+            receipt_number: generateReceiptNumber(),
+            cashier_id: cashierId,
+
+            subtotal: totals.subtotal,
+            total: totals.total,
+
+            payment_method: paymentMethod,
+            amount_received: amountReceived,
+            change_given: changeGiven,
+            notes,
+
+            customer_name: normalizedCustomerName,
+            customer_phone: normalizedCustomerPhone,
+            shipping_address:
+                shippingMethod === "PICKUP"
+                    ? null
+                    : normalizedShippingAddress,
+            shipping_method: shippingMethod,
+            fulfillment_status: fulfillmentStatus,
+        })
+        .select()
+        .single();
 
     if (error) {
         throw error;
@@ -172,6 +184,14 @@ export async function checkout({
     changeGiven,
     notes = "",
 }) {
+
+    validateShippingDetails({
+        shippingMethod,
+        customerName,
+        customerPhone,
+        shippingAddress,
+    });
+
     const validation = await validateCart(cart);
 
     if (!validation.valid) {
@@ -244,4 +264,52 @@ function getInitialFulfillmentStatus(shippingMethod) {
     }
 
     return "PENDING";
+}
+
+function isValidPhilippinePhone(phone) {
+    const normalized = phone
+        .trim()
+        .replace(/[\s()-]/g, "");
+
+    return /^(09\d{9}|639\d{9}|\+639\d{9})$/.test(
+        normalized
+    );
+}
+
+function validateShippingDetails({
+    shippingMethod,
+    customerName,
+    customerPhone,
+    shippingAddress,
+}) {
+    if (!shippingMethod) {
+        throw new Error("Shipping method is required.");
+    }
+
+    if (!["PICKUP", "LBC", "J&T"].includes(shippingMethod)) {
+        throw new Error("Invalid shipping method.");
+    }
+
+    if (!customerName?.trim()) {
+        throw new Error("Customer name is required.");
+    }
+
+    if (!customerPhone?.trim()) {
+        throw new Error("Customer number is required.");
+    }
+
+    if (!isValidPhilippinePhone(customerPhone)) {
+        throw new Error(
+            "Please enter a valid Philippine phone number."
+        );
+    }
+
+    if (
+        shippingMethod !== "PICKUP" &&
+        !shippingAddress?.trim()
+    ) {
+        throw new Error(
+            "Shipping address is required for delivery."
+        );
+    }
 }
