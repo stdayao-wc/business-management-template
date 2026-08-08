@@ -14,12 +14,15 @@ import {
 import { useCart } from "@/hooks/useCart";
 import CheckoutDialog from "@/components/pos/CheckoutDialog";
 import { useAuth } from "@/context/AuthContext";
+import ReceiptModal from "@/components/pos/ReceiptModal";
 
 export default function POSPage() {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [checkoutOpen, setCheckoutOpen] = useState(false);
+    const [receipt, setReceipt] = useState(null);
     const { user } = useAuth();
+    
 
     function openCheckout() {
         setCheckoutOpen(true);
@@ -31,13 +34,18 @@ export default function POSPage() {
 
     async function handleCheckout(payment) {
         try {
-            await checkout({
+            const sale = await checkout({
                 cashierId: user.id,
                 cart,
                 paymentMethod: payment.paymentMethod,
                 amountReceived: payment.amountReceived,
                 changeGiven: payment.changeGiven,
                 notes: payment.notes,
+            });
+
+            setReceipt({
+                sale,
+                items: cart,
             });
 
             clearCart();
@@ -47,6 +55,8 @@ export default function POSPage() {
             console.error("Checkout failed:", error);
         }
     }
+
+
     const {
         cart,
         totals,
@@ -105,6 +115,12 @@ export default function POSPage() {
                 totals={totals}
                 onClose={closeCheckout}
                 onConfirm={handleCheckout}
+            />
+
+            <ReceiptModal
+                open={receipt !== null}
+                receipt={receipt}
+                onClose={() => setReceipt(null)}
             />
 
         </div>
