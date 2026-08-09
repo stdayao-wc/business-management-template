@@ -224,7 +224,11 @@ export async function checkout({
                 item.quantity
             );
 
-        await sellInventoryItems(inventoryItems);
+        await sellInventoryItems(
+            inventoryItems,
+            cashierId,
+            sale.id
+        );
     }
 
     return sale;

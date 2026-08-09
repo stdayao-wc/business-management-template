@@ -6,6 +6,8 @@ import Modal from "@/components/common/Modal";
 
 import { TRANSACTION_CONFIG } from "@/app/config/inventoryTransactionConfig";
 
+import { useAuth } from "@/context/AuthContext";
+
 export default function InventoryTransactionDialog({
   open,
 
@@ -17,6 +19,8 @@ export default function InventoryTransactionDialog({
 
   onSuccess,
 }) {
+  const { user } = useAuth();
+
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -41,8 +45,9 @@ export default function InventoryTransactionDialog({
       }
 
       await config.service({
-        productId: product.id,
-        quantity,
+          productId: product.id,
+          quantity,
+          performedBy: user.id,
       });
 
       onSuccess?.();

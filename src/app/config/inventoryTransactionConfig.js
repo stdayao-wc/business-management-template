@@ -5,7 +5,6 @@ import {
 import {
     receiveStock,
     shipStock,
-    reserveStock,
     damageStock,
 } from "@/services/inventory";
 
@@ -32,14 +31,6 @@ export const TRANSACTION_CONFIG = {
             action: "Ship Stock",
             loading: "Shipping...",
             service: shipStock,
-        }),
-
-    [INVENTORY_TRANSACTION_TYPES.RESERVE]:
-        createTransaction({
-            title: "Reserve Stock",
-            action: "Reserve Stock",
-            loading: "Reserving...",
-            service: reserveStock,
         }),
 
     [INVENTORY_TRANSACTION_TYPES.DAMAGE]:

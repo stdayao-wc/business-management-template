@@ -25,6 +25,20 @@ async function getInventoryStatus(statusName) {
     return data;
 }
 
+async function getDefaultInventoryLocation() {
+    const { data, error } = await supabase
+        .from("locations")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("created_at")
+        .limit(1)
+        .single();
+
+    if (error) throw error;
+
+    return data;
+}
+
 async function getProduct(productId) {
     const { data, error } = await supabase
         .from(PRODUCTS_TABLE)
@@ -61,6 +75,7 @@ function generateItemCode(sku, sequence) {
 function buildInventoryItems(
     product,
     statusId,
+    locationId,
     startSequence,
     quantity
 ) {
@@ -71,12 +86,43 @@ function buildInventoryItems(
             startSequence + index
         ),
         status_id: statusId,
+        location_id: locationId,
+        received_at: new Date().toISOString(),
     }));
+}
+
+async function createInventoryTransaction({
+    inventoryItemId,
+    transactionType,
+    fromStatusId = null,
+    toStatusId = null,
+    fromLocationId = null,
+    toLocationId = null,
+    performedBy,
+    saleId = null,
+    notes = null,
+}) {
+    const { error } = await supabase
+        .from("inventory_transactions")
+        .insert({
+            inventory_item_id: inventoryItemId,
+            transaction_type: transactionType,
+            from_status_id: fromStatusId,
+            to_status_id: toStatusId,
+            from_location_id: fromLocationId,
+            to_location_id: toLocationId,
+            performed_by: performedBy,
+            sale_id: saleId,
+            notes,
+        });
+
+    if (error) throw error;
 }
 
 export async function receiveStock({
     productId,
     quantity,
+    performedBy,
 }) {
     if (!Number.isInteger(quantity) || quantity <= 0) {
         throw new Error("Quantity must be a positive integer.");
@@ -87,10 +133,12 @@ export async function receiveStock({
         INVENTORY_ITEM_STATUSES.IN_STOCK
     );
     const currentCount = await getInventoryCount(productId);
+    const location = await getDefaultInventoryLocation();
 
     const items = buildInventoryItems(
         product,
         status.id,
+        location.id,
         currentCount + 1,
         quantity
     );
@@ -102,6 +150,18 @@ export async function receiveStock({
 
     if (error) throw error;
 
+    for (const item of data) {
+        await createInventoryTransaction({
+            inventoryItemId: item.id,
+            transactionType: "RECEIVE",
+            fromStatusId: null,
+            toStatusId: status.id,
+            fromLocationId: null,
+            toLocationId: location.id,
+            performedBy,
+        });
+    }
+
     return {
         product,
         quantity,
@@ -112,8 +172,12 @@ export async function receiveStock({
 async function updateInventoryItemStatus({
     productId,
     quantity,
+    transactionType,
     fromStatus,
     toStatus,
+    performedBy,
+    saleId = null,
+    notes = null,
 }) {
     if (!Number.isInteger(quantity) || quantity <= 0) {
         throw new Error(
@@ -121,8 +185,19 @@ async function updateInventoryItemStatus({
         );
     }
 
-    const sourceStatus = await getInventoryStatus(fromStatus);
-    const destinationStatus = await getInventoryStatus(toStatus);
+    if (!performedBy) {
+        throw new Error(
+            "User performing the inventory transaction is required."
+        );
+    }
+
+    const sourceStatus = await getInventoryStatus(
+        fromStatus
+    );
+
+    const destinationStatus = await getInventoryStatus(
+        toStatus
+    );
 
     const { data: items, error } = await supabase
         .from(INVENTORY_TABLE)
@@ -151,6 +226,25 @@ async function updateInventoryItemStatus({
         .select();
 
     if (updateError) throw updateError;
+
+    for (const item of items) {
+        await createInventoryTransaction({
+            inventoryItemId: item.id,
+
+            transactionType,
+
+            fromStatusId: sourceStatus.id,
+            toStatusId: destinationStatus.id,
+
+            fromLocationId: item.location_id,
+            toLocationId: item.location_id,
+
+            performedBy,
+
+            saleId,
+            notes,
+        });
+    }
 
     return {
         quantity,
@@ -191,42 +285,48 @@ export async function getInventoryCounts(productIds) {
 export async function shipStock({
     productId,
     quantity,
+    performedBy,
+    saleId = null,
+    notes = null,
 }) {
     return updateInventoryItemStatus({
         productId,
         quantity,
+
+        transactionType: "SHIP",
+
         fromStatus:
             INVENTORY_ITEM_STATUSES.IN_STOCK,
+
         toStatus:
             INVENTORY_ITEM_STATUSES.SHIPPED,
-    });
-}
 
-export async function reserveStock({
-    productId,
-    quantity,
-}) {
-    return updateInventoryItemStatus({
-        productId,
-        quantity,
-        fromStatus:
-            INVENTORY_ITEM_STATUSES.IN_STOCK,
-        toStatus:
-            INVENTORY_ITEM_STATUSES.RESERVED,
+        performedBy,
+        saleId,
+        notes,
     });
 }
 
 export async function damageStock({
     productId,
     quantity,
+    performedBy,
+    notes = null,
 }) {
     return updateInventoryItemStatus({
         productId,
         quantity,
+
+        transactionType: "DAMAGE",
+
         fromStatus:
             INVENTORY_ITEM_STATUSES.IN_STOCK,
+
         toStatus:
             INVENTORY_ITEM_STATUSES.DAMAGED,
+
+        performedBy,
+        notes,
     });
 }
 
@@ -287,39 +387,61 @@ export async function getAvailableInventoryItems(
 /**
  * Marks inventory items as sold.
  */
-export async function sellInventoryItems(items) {
+export async function sellInventoryItems(
+    items,
+    performedBy,
+    saleId
+) {
+    if (!performedBy) {
+        throw new Error(
+            "User performing the inventory transaction is required."
+        );
+    }
+
+    if (!saleId) {
+        throw new Error(
+            "Sale ID is required when selling inventory."
+        );
+    }
+
     const soldStatus = await getInventoryStatus(
         INVENTORY_ITEM_STATUSES.SOLD
     );
 
     const ids = items.map((item) => item.id);
 
-    const { error } = await supabase
+    const soldAt = new Date().toISOString();
+
+    const { data, error } = await supabase
         .from(INVENTORY_TABLE)
         .update({
             status_id: soldStatus.id,
-            sold_at: new Date().toISOString(),
+            sold_at: soldAt,
         })
-        .in("id", ids);
+        .in("id", ids)
+        .select();
 
     if (error) {
         throw error;
     }
+
+    for (const item of items) {
+        await createInventoryTransaction({
+            inventoryItemId: item.id,
+
+            transactionType: "SELL",
+
+            fromStatusId: item.status_id,
+            toStatusId: soldStatus.id,
+
+            fromLocationId: item.location_id,
+            toLocationId: item.location_id,
+
+            performedBy,
+
+            saleId,
+        });
+    }
+
+    return data;
 }
-/**
- * Synchronizes product stock with inventory.
- */
-// export async function updateProductStock(productId) {
-//     const stock = await getAvailableStock(productId);
-
-//     const { error } = await supabase
-//         .from(PRODUCTS_TABLE)
-//         .update({
-//             stock,
-//         })
-//         .eq("id", productId);
-
-//     if (error) {
-//         throw error;
-//     }
-// }
