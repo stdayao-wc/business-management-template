@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import {
     getOrders,
+    markOrderReadyForPickup,
     markOrderPickedUp,
     markOrderShipped,
     markOrderDelivered,
@@ -31,12 +32,14 @@ export default function OrdersPage() {
             const data = await getOrders();
 
             setOrders(data);
+
+            return data;
         } catch (error) {
             console.error("Failed to load orders:", error);
 
-            toast.error(
-                "Unable to load orders."
-            );
+            toast.error("Unable to load orders.");
+
+            return null;
         } finally {
             setLoading(false);
         }
@@ -56,6 +59,9 @@ export default function OrdersPage() {
 
         try {
             setUpdatingOrderId(orderId);
+            if (action === "ready_for_pickup") {
+                await markOrderReadyForPickup(orderId);
+            }
 
             if (action === "picked_up") {
                 await markOrderPickedUp(
@@ -137,22 +143,30 @@ export default function OrdersPage() {
             <OrdersTable
                 orders={orders}
                 loading={loading}
-                updatingOrderId={
-                    updatingOrderId
-                }
+                updatingOrderId={updatingOrderId}
                 onView={setSelectedOrder}
+
+                onMarkReadyForPickup={(orderId) =>
+                    handleStatusUpdate(
+                        orderId,
+                        "ready_for_pickup"
+                    )
+                }
+
                 onMarkPickedUp={(orderId) =>
                     handleStatusUpdate(
                         orderId,
                         "picked_up"
                     )
                 }
+
                 onMarkShipped={(orderId) =>
                     handleStatusUpdate(
                         orderId,
                         "shipped"
                     )
                 }
+
                 onMarkDelivered={(orderId) =>
                     handleStatusUpdate(
                         orderId,

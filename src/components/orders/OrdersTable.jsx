@@ -64,8 +64,17 @@ function getStatusClass(status) {
 function getAction(order) {
     if (
         order.shipping_method === "PICKUP" &&
-        order.fulfillment_status ===
-            "READY_FOR_PICKUP"
+        order.fulfillment_status === "PENDING"
+    ) {
+        return {
+            label: "Ready for Pickup",
+            action: "ready_for_pickup",
+        };
+    }
+
+    if (
+        order.shipping_method === "PICKUP" &&
+        order.fulfillment_status === "READY_FOR_PICKUP"
     ) {
         return {
             label: "Mark Picked Up",
@@ -101,6 +110,7 @@ export default function OrdersTable({
     loading,
     updatingOrderId,
     onView,
+    onMarkReadyForPickup,
     onMarkPickedUp,
     onMarkShipped,
     onMarkDelivered,
@@ -242,6 +252,21 @@ export default function OrdersTable({
                                         >
                                             View
                                         </button>
+
+                                        {action?.action === "ready_for_pickup" && (
+                                            <button
+                                                type="button"
+                                                disabled={updating}
+                                                onClick={() =>
+                                                    onMarkReadyForPickup(order.id)
+                                                }
+                                                className="rounded-lg bg-yellow-600 px-3 py-2 text-sm text-white disabled:opacity-50"
+                                            >
+                                                {updating
+                                                    ? "Updating..."
+                                                    : action.label}
+                                            </button>
+                                        )}
 
                                         {action?.action ===
                                             "picked_up" && (
