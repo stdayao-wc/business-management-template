@@ -10,10 +10,20 @@ const FULFILLMENT_STATUSES = {
     DELIVERED: "DELIVERED",
 };
 
-export async function getOrders() {
-    const { data, error } = await supabase
+export async function getOrders({
+    page = 1,
+    pageSize = 20,
+} = {}) {
+    const safePage = Math.max(1, page);
+    const safePageSize = Math.max(1, pageSize);
+
+    const from = (safePage - 1) * safePageSize;
+    const to = from + safePageSize - 1;
+
+    const { data, count, error } = await supabase
         .from(SALES_TABLE)
-        .select(`
+        .select(
+            `
             *,
             cashier:profiles (
                 id,
@@ -34,16 +44,26 @@ export async function getOrders() {
                     image_path
                 )
             )
-        `)
+            `,
+            {
+                count: "exact",
+            }
+        )
         .order("created_at", {
             ascending: false,
-        });
+        })
+        .range(from, to);
 
     if (error) {
         throw error;
     }
 
-    return data;
+    return {
+        data,
+        total: count ?? 0,
+        page: safePage,
+        pageSize: safePageSize,
+    };
 }
 
 export async function getOrder(id) {

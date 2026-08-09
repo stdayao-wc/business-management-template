@@ -25,15 +25,41 @@ export default function OrdersPage() {
     const [updatingOrderId, setUpdatingOrderId] =
         useState(null);
 
-    async function loadOrders() {
+    const [page, setPage] = useState(1);
+    const [pageSize] = useState(5);
+    const [totalOrders, setTotalOrders] = useState(0);
+
+    function handlePageChange(nextPage) {
+        if (nextPage < 1) {
+            return;
+        }
+
+        const totalPages = Math.max(
+            1,
+            Math.ceil(totalOrders / pageSize)
+        );
+
+        if (nextPage > totalPages) {
+            return;
+        }
+
+        setPage(nextPage);
+        loadOrders(nextPage);
+    }
+
+    async function loadOrders(pageNumber) {
         try {
             setLoading(true);
 
-            const data = await getOrders();
+            const result = await getOrders({
+                page: pageNumber,
+                pageSize,
+            });
 
-            setOrders(data);
+            setOrders(result.data);
+            setTotalOrders(result.total);
 
-            return data;
+            return result;
         } catch (error) {
             console.error("Failed to load orders:", error);
 
@@ -46,7 +72,7 @@ export default function OrdersPage() {
     }
 
     useEffect(() => {
-        loadOrders();
+        loadOrders(1);
     }, []);
 
     async function handleStatusUpdate(
@@ -81,32 +107,26 @@ export default function OrdersPage() {
                 );
             }
 
-            await loadOrders();
+            await loadOrders(page);
 
-            // Refresh the selected order as well
-            // if the modal is currently open.
-            if (
-                selectedOrder?.id === orderId
-            ) {
-                const updatedOrder =
-                    orders.find(
-                        (order) =>
-                            order.id === orderId
-                    );
+            if (selectedOrder?.id === orderId) {
+                setSelectedOrder((current) => {
+                    if (!current) {
+                        return current;
+                    }
 
-                if (updatedOrder) {
-                    setSelectedOrder({
-                        ...updatedOrder,
+                    return {
+                        ...current,
                         fulfillment_status:
-                            action ===
-                            "picked_up"
+                            action === "ready_for_pickup"
+                                ? "READY_FOR_PICKUP"
+                                : action === "picked_up"
                                 ? "PICKED_UP"
-                                : action ===
-                                  "shipped"
+                                : action === "shipped"
                                 ? "SHIPPED"
                                 : "DELIVERED",
-                    });
-                }
+                    };
+                });
             }
 
             toast.success(
@@ -144,6 +164,10 @@ export default function OrdersPage() {
                 orders={orders}
                 loading={loading}
                 updatingOrderId={updatingOrderId}
+                page={page}
+                pageSize={pageSize}
+                totalOrders={totalOrders}
+                onPageChange={handlePageChange}
                 onView={setSelectedOrder}
 
                 onMarkReadyForPickup={(orderId) =>
