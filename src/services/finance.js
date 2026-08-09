@@ -11,11 +11,12 @@ export const EXPENSE_TYPES = {
 
 /**
  * Get completed sales for Finance.
- *
- * Sales are treated as Cash In.
  */
-async function getSales() {
-    const { data, error } = await supabase
+async function getSales({
+    startDate = null,
+    endDate = null,
+} = {}) {
+    let query = supabase
         .from(SALES_TABLE)
         .select(`
             id,
@@ -25,10 +26,28 @@ async function getSales() {
             created_at,
             status
         `)
-        .eq("status", "completed")
-        .order("created_at", {
+        .eq("status", "completed");
+
+    if (startDate) {
+        query = query.gte(
+            "created_at",
+            startDate
+        );
+    }
+
+    if (endDate) {
+        query = query.lt(
+            "created_at",
+            endDate
+        );
+    }
+
+    const { data, error } = await query.order(
+        "created_at",
+        {
             ascending: false,
-        });
+        }
+    );
 
     if (error) {
         throw error;
@@ -39,11 +58,12 @@ async function getSales() {
 
 /**
  * Get expenses for Finance.
- *
- * Expenses are treated as Cash Out.
  */
-async function getExpenses() {
-    const { data, error } = await supabase
+async function getExpenses({
+    startDate = null,
+    endDate = null,
+} = {}) {
+    let query = supabase
         .from(EXPENSES_TABLE)
         .select(`
             id,
@@ -55,10 +75,28 @@ async function getExpenses() {
             notes,
             created_by,
             created_at
-        `)
-        .order("created_at", {
+        `);
+
+    if (startDate) {
+        query = query.gte(
+            "created_at",
+            startDate
+        );
+    }
+
+    if (endDate) {
+        query = query.lt(
+            "created_at",
+            endDate
+        );
+    }
+
+    const { data, error } = await query.order(
+        "created_at",
+        {
             ascending: false,
-        });
+        }
+    );
 
     if (error) {
         throw error;
@@ -67,86 +105,73 @@ async function getExpenses() {
     return data;
 }
 
-/**
- * Convert a sale into the common Finance transaction format.
- */
 function normalizeSale(sale) {
     return {
         id: sale.id,
-
         date: sale.created_at,
-
         description: `Sale ${sale.receipt_number}`,
-
         type: "CASH_IN",
-
         amount: Number(sale.total),
-
         source: "SALE",
-
         reference: sale.receipt_number,
-
         paymentMethod: sale.payment_method,
     };
 }
 
-/**
- * Convert an expense into the common Finance transaction format.
- */
 function normalizeExpense(expense) {
     let description = expense.description;
 
     if (
         expense.expense_type ===
-        EXPENSE_TYPES.EMPLOYEE_SALARY &&
+            EXPENSE_TYPES.EMPLOYEE_SALARY &&
         expense.employee_name
     ) {
-        description = `Employee Salary - ${expense.employee_name}`;
+        description =
+            `Employee Salary - ${expense.employee_name}`;
     }
 
     if (
         expense.expense_type ===
-        EXPENSE_TYPES.BUY_FROM_SUPPLIER &&
+            EXPENSE_TYPES.BUY_FROM_SUPPLIER &&
         expense.supplier_name
     ) {
-        description = `Supplier Purchase - ${expense.supplier_name}`;
+        description =
+            `Supplier Purchase - ${expense.supplier_name}`;
     }
 
     return {
         id: expense.id,
-
         date: expense.created_at,
-
         description,
-
         type: "CASH_OUT",
-
         amount: Number(expense.amount),
-
         source: "EXPENSE",
-
         reference: expense.id,
-
         expenseType: expense.expense_type,
-
         employeeName: expense.employee_name,
-
         supplierName: expense.supplier_name,
-
         notes: expense.notes,
     };
 }
 
 /**
- * Get all Finance transactions.
+ * Get Finance transactions for a date range.
  *
- * Combines Sales and Expenses into one
- * normalized transaction list.
+ * endDate is exclusive.
  */
-export async function getFinanceTransactions() {
+export async function getFinanceTransactions({
+    startDate = null,
+    endDate = null,
+} = {}) {
     const [sales, expenses] = await Promise.all([
-        getSales(),
-        getExpenses(),
+        getSales({
+            startDate,
+            endDate,
+        }),
+        getExpenses({
+            startDate,
+            endDate,
+        }),
     ]);
 
     const transactions = [
@@ -164,7 +189,7 @@ export async function getFinanceTransactions() {
 }
 
 /**
- * Calculate Finance totals from normalized transactions.
+ * Calculate Finance totals.
  */
 export function calculateFinanceTotals(
     transactions
@@ -186,5 +211,177 @@ export function calculateFinanceTotals(
         cashIn,
         cashOut,
         netCashFlow: cashIn - cashOut,
+    };
+}
+
+/**
+ * Create a financial expense.
+ */
+export async function createExpense({
+    expenseType,
+    description,
+    amount,
+    employeeName = null,
+    supplierName = null,
+    notes = null,
+    createdBy,
+}) {
+    if (!createdBy) {
+        throw new Error(
+            "User creating the expense is required."
+        );
+    }
+
+    if (!expenseType) {
+        throw new Error(
+            "Expense type is required."
+        );
+    }
+
+    if (!description?.trim()) {
+        throw new Error(
+            "Description is required."
+        );
+    }
+
+    if (
+        !Number.isFinite(amount) ||
+        amount <= 0
+    ) {
+        throw new Error(
+            "Amount must be greater than zero."
+        );
+    }
+
+    const { data, error } = await supabase
+        .from(EXPENSES_TABLE)
+        .insert({
+            expense_type: expenseType,
+            description: description.trim(),
+            amount,
+            employee_name:
+                employeeName?.trim() || null,
+            supplier_name:
+                supplierName?.trim() || null,
+            notes: notes?.trim() || null,
+            created_by: createdBy,
+        })
+        .select()
+        .single();
+
+    if (error) {
+        throw error;
+    }
+
+    return data;
+}
+
+export const FINANCE_PERIODS = {
+    WEEK: "week",
+    MONTH: "month",
+    YEAR: "year",
+};
+
+export function getFinanceDateRange(period) {
+    const now = new Date();
+
+    if (period === FINANCE_PERIODS.WEEK) {
+        const start = new Date(now);
+
+        const day = start.getDay();
+
+        const daysFromMonday =
+            day === 0 ? 6 : day - 1;
+
+        start.setDate(
+            start.getDate() - daysFromMonday
+        );
+
+        start.setHours(0, 0, 0, 0);
+
+        return {
+            startDate: start.toISOString(),
+            endDate: now.toISOString(),
+        };
+    }
+
+    if (period === FINANCE_PERIODS.MONTH) {
+        const start = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            1
+        );
+
+        return {
+            startDate: start.toISOString(),
+            endDate: now.toISOString(),
+        };
+    }
+
+    if (period === FINANCE_PERIODS.YEAR) {
+        const start = new Date(
+            now.getFullYear(),
+            0,
+            1
+        );
+
+        return {
+            startDate: start.toISOString(),
+            endDate: now.toISOString(),
+        };
+    }
+
+    return {
+        startDate: null,
+        endDate: null,
+    };
+}
+
+export function calculateFinanceReport(
+    transactions
+) {
+    const totals =
+        calculateFinanceTotals(transactions);
+
+    let salesCount = 0;
+    let expenseCount = 0;
+
+    const cashInBySource = {};
+    const cashOutByType = {};
+
+    for (const transaction of transactions) {
+        if (transaction.type === "CASH_IN") {
+            salesCount++;
+
+            cashInBySource[
+                transaction.source
+            ] =
+                (cashInBySource[
+                    transaction.source
+                ] ?? 0) +
+                transaction.amount;
+        }
+
+        if (transaction.type === "CASH_OUT") {
+            expenseCount++;
+
+            cashOutByType[
+                transaction.expenseType
+            ] =
+                (cashOutByType[
+                    transaction.expenseType
+                ] ?? 0) +
+                transaction.amount;
+        }
+    }
+
+    return {
+        ...totals,
+
+        salesCount,
+        expenseCount,
+
+        cashInBySource,
+        cashOutByType,
     };
 }

@@ -25,8 +25,8 @@ const navigation = [
       icon: "/icons/orders.png",
     },
     {
-      label: "Shipping",
-      href: "/shipping",
+      label: "Finance",
+      href: "/finance",
       icon: "/icons/shipping.png"
     },
     {
