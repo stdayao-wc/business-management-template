@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useLayout } from "@/context/LayoutContext";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SideNavbar({
   links = [],
@@ -25,10 +26,19 @@ export default function SideNavbar({
     },
   },
 }) {
+  const { can } = useAuth();
   const pathname = usePathname();
   const { sidebarMode } = useLayout();
 
   const collapsed = sidebarMode === "collapsed";
+
+  const visibleLinks = links.filter((link) => {
+    if (!link.permission) {
+      return true;
+    }
+
+    return can(link.permission);
+  });
 
   return (
     <aside
@@ -66,7 +76,7 @@ export default function SideNavbar({
             ${collapsed ? "w-full px-2" : layout.sidebar.navigation.width}
           `}
         >
-          {links.map((link) => {
+          {visibleLinks.map((link) => {
             const isActive = pathname === link.href;
 
             return (
