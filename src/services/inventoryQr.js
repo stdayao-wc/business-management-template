@@ -95,34 +95,34 @@ export async function generateInventoryQrPdf(items) {
             qrSize
         );
 
-        // Item code
-        doc.setFontSize(11);
-        doc.setFont(undefined, "bold");
+// Item code
+doc.setFontSize(8);
+doc.setFont(undefined, "bold");
 
-        doc.text(
-            item.item_code,
-            x + cardWidth / 2,
-            y + 52,
-            {
-                align: "center",
-            }
-        );
+doc.text(
+    item.item_code,
+    x + cardWidth / 2,
+    y + 40,
+    {
+        align: "center",
+    }
+);
 
-        // Product name
-        if (item.product_name) {
-            doc.setFontSize(8);
-            doc.setFont(undefined, "normal");
+// Product name
+if (item.product_name) {
+    doc.setFontSize(6);
+    doc.setFont(undefined, "normal");
 
-            doc.text(
-                item.product_name,
-                x + cardWidth / 2,
-                y + 58,
-                {
-                    align: "center",
-                    maxWidth: cardWidth - 10,
-                }
-            );
+    doc.text(
+        item.product_name,
+        x + cardWidth / 2,
+        y + 45,
+        {
+            align: "center",
+            maxWidth: cardWidth - 4,
         }
+    );
+}
     }
 
     const filename =
