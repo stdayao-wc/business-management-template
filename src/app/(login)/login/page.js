@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Logo from "@/components/layout/header/Logo";
+import app from "@/app/config/app";
 
 import { login } from "@/services/auth";
 
@@ -43,9 +45,16 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-100">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow">
-        <h1 className="mb-6 text-2xl font-bold">
-          Business Management System
-        </h1>
+        <div className="mb-6 flex justify-center">
+            <Logo
+                href={app.home}
+                src={app.logo.src}
+                alt={app.logo.alt}
+                title={app.name}
+                imageWidth={app.logo.width}
+                imageHeight={app.logo.height}
+            />
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
