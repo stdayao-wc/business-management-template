@@ -7,15 +7,16 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function ItemCard({
-  mode = "catalog",
+    mode = "catalog",
 
-  product,
+    product,
 
-  onEdit,
-  onDelete,
+    onEdit,
+    onDelete,
 
-  onReceiveStock,
-  onDamageStock,
+    onReceiveStock,
+    onDamageStock,
+    onViewItems,
 }) {
   const isCatalog = mode === "catalog";
   const isInventory = mode === "inventory";
@@ -55,24 +56,34 @@ export default function ItemCard({
           {isInventory && <StatusPill stock={product.stock} />}
 
           {isInventory && (
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => onReceiveStock?.(product)}
-                className="rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-green-700"
-              >
-                Receive
-              </button>
+            <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                    <button
+                        type="button"
+                        onClick={() => onReceiveStock?.(product)}
+                        className="rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-green-700"
+                    >
+                        Receive
+                    </button>
 
-              <button
-                type="button"
-                onClick={() => onDamageStock?.(product)}
-                className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700"
-              >
-                Damage
-              </button>
+                    <button
+                        type="button"
+                        onClick={() => onDamageStock?.(product)}
+                        className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+                    >
+                        Damage
+                    </button>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={() => onViewItems?.(product)}
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium transition hover:bg-gray-50"
+                >
+                    View Items
+                </button>
             </div>
-          )}
+        )}
 
           <div className="flex gap-2">
             {isCatalog && (

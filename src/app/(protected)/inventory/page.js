@@ -6,7 +6,7 @@ import { INVENTORY_TRANSACTION_TYPES } from "@/constants/inventoryTransactions";
 import ItemCard from "@/components/inventory/ItemCard";
 import ItemGrid from "@/components/inventory/ItemGrid";
 import InventoryTransactionDialog from "@/components/inventory/InventoryTransactionDialog";
-
+import InventoryItemsModal from "@/components/inventory/InventoryItemsModal";
 import {
     getInventoryCounts,
 } from "@/services/inventory";
@@ -30,6 +30,15 @@ export default function InventoryPage() {
     const [selectedProduct, setSelectedProduct] = useState(null);
 
     const [searchTerm, setSearchTerm] = useState("");
+    const [
+        isItemsModalOpen,
+        setIsItemsModalOpen,
+    ] = useState(false);
+
+    const [
+        selectedInventoryProduct,
+        setSelectedInventoryProduct,
+    ] = useState(null);
 
     const filteredProducts = useMemo(() => {
         const query = searchTerm.trim().toLowerCase();
@@ -89,6 +98,16 @@ export default function InventoryPage() {
         loadInventory();
     }, []);
 
+    function handleViewItems(product) {
+        setSelectedInventoryProduct(product);
+        setIsItemsModalOpen(true);
+    }
+
+    function handleCloseItemsModal() {
+        setSelectedInventoryProduct(null);
+        setIsItemsModalOpen(false);
+    }
+
     return (
         <div className="space-y-10">
 
@@ -118,6 +137,7 @@ export default function InventoryPage() {
                         product={product}
                         onReceiveStock={handleReceiveStock}
                         onDamageStock={handleDamageStock}
+                        onViewItems={handleViewItems}
                     />
                 ))}
             </ItemGrid>
@@ -127,6 +147,11 @@ export default function InventoryPage() {
                 type={transactionType}
                 onClose={handleCloseTransactionDialog}
                 onSuccess={loadInventory}
+            />
+            <InventoryItemsModal
+                open={isItemsModalOpen}
+                product={selectedInventoryProduct}
+                onClose={handleCloseItemsModal}
             />
         </div>
     );

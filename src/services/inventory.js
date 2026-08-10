@@ -446,29 +446,85 @@ export async function sellInventoryItems(
     return data;
 }
 
+
+
+/**
+ * Gets all physical inventory items for a product.
+ */
 export async function getInventoryItems(productId) {
-    const { data, error } = await supabase
-        .from(INVENTORY_TABLE)
-        .select(`
-            id,
-            item_code,
-            received_at,
-            sold_at,
-            status_id,
-            location_id,
-            inventory_item_statuses (
-                id,
-                name
-            ),
-            locations (
-                id,
-                name
-            )
-        `)
-        .eq("product_id", productId)
-        .order("id");
+    if (!productId) {
+        throw new Error("Product ID is required.");
+    }
+    
+const { data, error } = await supabase
+    .from(INVENTORY_TABLE)
+    .select(`
+        id,
+        product_id,
+        item_code,
+        status_id,
+        location_id,
+        received_at,
+        sold_at
+    `)
+    .eq("product_id", productId)
+    .order("item_code", { ascending: false });
 
     if (error) throw error;
 
-    return data;
+    if (!data.length) {
+        return [];
+    }
+
+    const statusIds = [
+        ...new Set(
+            data
+                .map((item) => item.status_id)
+                .filter(Boolean)
+        ),
+    ];
+
+    const locationIds = [
+        ...new Set(
+            data
+                .map((item) => item.location_id)
+                .filter(Boolean)
+        ),
+    ];
+
+    const [
+        { data: statuses, error: statusError },
+        { data: locations, error: locationError },
+    ] = await Promise.all([
+        statusIds.length
+            ? supabase
+                .from(STATUS_TABLE)
+                .select("id, name")
+                .in("id", statusIds)
+            : Promise.resolve({ data: [], error: null }),
+
+        locationIds.length
+            ? supabase
+                .from("locations")
+                .select("id, name")
+                .in("id", locationIds)
+            : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    if (statusError) throw statusError;
+    if (locationError) throw locationError;
+
+    const statusMap = Object.fromEntries(
+        statuses.map((status) => [status.id, status])
+    );
+
+    const locationMap = Object.fromEntries(
+        locations.map((location) => [location.id, location])
+    );
+
+    return data.map((item) => ({
+        ...item,
+        status: statusMap[item.status_id] ?? null,
+        location: locationMap[item.location_id] ?? null,
+    }));
 }
