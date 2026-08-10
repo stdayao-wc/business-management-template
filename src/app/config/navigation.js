@@ -14,13 +14,13 @@ const navigation = [
     {
         label: "Inventory",
         href: "/inventory",
-        icon: "/icons/inventory.png",
+        icon: "/icons/warehouse.png",
         permission: "inventory.read",
     },
     {
         label: "POS",
         href: "/pos",
-        icon: "/icons/orders.png",
+        icon: "/icons/pos.png",
         permission: "pos.read",
     },
     {
@@ -32,7 +32,7 @@ const navigation = [
     {
         label: "Finance",
         href: "/finance",
-        icon: "/icons/shipping.png",
+        icon: "/icons/finance.png",
         permission: "finance.read",
     },
     // {

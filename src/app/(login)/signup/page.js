@@ -12,19 +12,13 @@ export default function SignupPage() {
                     </h1>
 
                     <p className="mt-2 text-sm text-gray-500">
-                        Create your Business Management System account.
+                        Create your Diskarte Pinoy TV account.
                     </p>
                 </div>
 
                 <SignupForm />
 
                 <div className="mt-6 text-center">
-                    <Link
-                        href="/login"
-                        className="text-sm text-blue-600 hover:text-blue-700"
-                    >
-                        Back to Sign In
-                    </Link>
                 </div>
             </div>
         </main>
