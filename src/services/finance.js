@@ -162,30 +162,24 @@ function normalizeExpense(expense) {
 export async function getFinanceTransactions({
     startDate = null,
     endDate = null,
+    page = 1,
+    pageSize = 5,
 } = {}) {
-    const [sales, expenses] = await Promise.all([
-        getSales({
-            startDate,
-            endDate,
-        }),
-        getExpenses({
-            startDate,
-            endDate,
-        }),
-    ]);
-
-    const transactions = [
-        ...sales.map(normalizeSale),
-        ...expenses.map(normalizeExpense),
-    ];
-
-    transactions.sort(
-        (a, b) =>
-            new Date(b.date) -
-            new Date(a.date)
+    const { data, error } = await supabase.rpc(
+        "get_finance_transactions",
+        {
+            p_start_date: startDate,
+            p_end_date: endDate,
+            p_page: page,
+            p_page_size: pageSize,
+        }
     );
 
-    return transactions;
+    if (error) {
+        throw error;
+    }
+
+    return data ?? [];
 }
 
 /**
@@ -383,5 +377,57 @@ export function calculateFinanceReport(
 
         cashInBySource,
         cashOutByType,
+    };
+}
+
+
+export async function getFinanceTransactionCount({
+    startDate = null,
+    endDate = null,
+} = {}) {
+    const { data, error } = await supabase.rpc(
+        "get_finance_transaction_count",
+        {
+            p_start_date: startDate,
+            p_end_date: endDate,
+        }
+    );
+
+    if (error) {
+        throw error;
+    }
+
+    return Number(data ?? 0);
+}
+
+export async function getFinanceTotals({
+    startDate = null,
+    endDate = null,
+} = {}) {
+    const { data, error } =
+        await supabase.rpc(
+            "get_finance_totals",
+            {
+                p_start_date: startDate,
+                p_end_date: endDate,
+            }
+        );
+
+    if (error) {
+        throw error;
+    }
+
+    const result = data?.[0];
+
+    return {
+        cashIn: Number(
+            result?.cash_in ?? 0
+        ),
+        cashOut: Number(
+            result?.cash_out ?? 0
+        ),
+        netCashFlow: Number(
+            result?.net_cash_flow ?? 0
+        ),
     };
 }

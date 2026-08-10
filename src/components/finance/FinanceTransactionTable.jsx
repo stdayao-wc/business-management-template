@@ -21,7 +21,17 @@ function formatDate(date) {
 export default function FinanceTransactionTable({
     transactions,
     loading,
+    page,
+    pageSize,
+    totalTransactions,
+    onPageChange,
 }) {
+    const totalPages = Math.max(
+    1,
+    Math.ceil(
+        totalTransactions / pageSize
+    )
+);
     return (
         <div className="rounded-xl bg-white shadow-sm">
             <div className="border-b px-6 py-5">
@@ -146,6 +156,54 @@ export default function FinanceTransactionTable({
                             )}
                         </tbody>
                     </table>
+
+                    <div className="flex items-center justify-between border-t px-6 py-4">
+    <p className="text-sm text-gray-500">
+        Showing{" "}
+        {totalTransactions === 0
+            ? 0
+            : (page - 1) * pageSize + 1}
+        –
+        {Math.min(
+            page * pageSize,
+            totalTransactions
+        )}{" "}
+        of {totalTransactions} transactions
+    </p>
+
+    <div className="flex items-center gap-2">
+        <button
+            type="button"
+            onClick={() =>
+                onPageChange(page - 1)
+            }
+            disabled={
+                loading || page <= 1
+            }
+            className="rounded-lg border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+        >
+            Previous
+        </button>
+
+        <span className="px-2 text-sm text-gray-600">
+            Page {page} of {totalPages}
+        </span>
+
+        <button
+            type="button"
+            onClick={() =>
+                onPageChange(page + 1)
+            }
+            disabled={
+                loading ||
+                page >= totalPages
+            }
+            className="rounded-lg border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+        >
+            Next
+        </button>
+    </div>
+</div>
                 </div>
             )}
         </div>

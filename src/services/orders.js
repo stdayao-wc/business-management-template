@@ -12,7 +12,7 @@ const FULFILLMENT_STATUSES = {
 
 export async function getOrders({
     page = 1,
-    pageSize = 20,
+    pageSize = 5,
 } = {}) {
     const safePage = Math.max(1, page);
     const safePageSize = Math.max(1, pageSize);

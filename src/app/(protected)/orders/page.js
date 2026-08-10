@@ -61,9 +61,14 @@ export default function OrdersPage() {
 
             return result;
         } catch (error) {
-            console.error("Failed to load orders:", error);
+            console.error(
+                "Failed to load orders:",
+                error
+            );
 
-            toast.error("Unable to load orders.");
+            toast.error(
+                "Unable to load orders."
+            );
 
             return null;
         } finally {
