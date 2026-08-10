@@ -445,3 +445,30 @@ export async function sellInventoryItems(
 
     return data;
 }
+
+export async function getInventoryItems(productId) {
+    const { data, error } = await supabase
+        .from(INVENTORY_TABLE)
+        .select(`
+            id,
+            item_code,
+            received_at,
+            sold_at,
+            status_id,
+            location_id,
+            inventory_item_statuses (
+                id,
+                name
+            ),
+            locations (
+                id,
+                name
+            )
+        `)
+        .eq("product_id", productId)
+        .order("id");
+
+    if (error) throw error;
+
+    return data;
+}
