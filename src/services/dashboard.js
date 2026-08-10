@@ -44,7 +44,8 @@ export async function getDashboardStats() {
             .select("*", {
                 count: "exact",
                 head: true,
-            }),
+            })
+            .eq("is_active", true),
 
         supabase
             .from(SALES_TABLE)

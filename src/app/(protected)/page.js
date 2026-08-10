@@ -196,8 +196,6 @@ export default function Home() {
                         </div>
                     </DashboardActivityCard>
                 </div>
-
-                <LogoutButton />
             </DashboardSection>
         </>
     );
