@@ -98,6 +98,12 @@ export default function FinancePage() {
         }
     }
 
+    async function handleDeductableSuccess() {
+        setDeductableModalOpen(false);
+
+        await loadFinance();
+    }
+
     useEffect(() => {
         loadFinance();
     }, [period, page]);
@@ -157,7 +163,7 @@ export default function FinancePage() {
                 onClose={() =>
                     setDeductableModalOpen(false)
                 }
-                onSuccess={loadFinance}
+                onSuccess={handleDeductableSuccess}
             />
         </div>
     );
