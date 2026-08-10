@@ -1,19 +1,6 @@
-// Inventory transactions.
-//
-// Current:
-// - Receive
-//
-// Planned:
-// - Ship
-// - Reserve
-// - Damage
-//
-// These operations will eventually use a shared
-// InventoryTransactionDialog.
-
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { INVENTORY_TRANSACTION_TYPES } from "@/constants/inventoryTransactions";
 import ItemCard from "@/components/inventory/ItemCard";
@@ -27,6 +14,7 @@ import {
 import {
     getProducts,
 } from "@/services/products";
+import ProductSearch from "@/components/pos/ProductSearch";
 
 export default function InventoryPage() {
     const [products, setProducts] = useState([]);
@@ -40,6 +28,24 @@ export default function InventoryPage() {
         useState(null);
 
     const [selectedProduct, setSelectedProduct] = useState(null);
+
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const filteredProducts = useMemo(() => {
+        const query = searchTerm.trim().toLowerCase();
+
+        if (!query) {
+            return products;
+        }
+
+        return products.filter((product) => {
+            return (
+                product.name?.toLowerCase().includes(query) ||
+                product.sku?.toLowerCase().includes(query) ||
+                product.barcode?.toLowerCase().includes(query)
+            );
+        });
+    }, [products, searchTerm]);
 
     async function loadInventory() {
         try {
@@ -76,14 +82,6 @@ export default function InventoryPage() {
         openTransaction(product, INVENTORY_TRANSACTION_TYPES.RECEIVE);
     }
 
-    function handleShipStock(product) {
-        openTransaction(product, INVENTORY_TRANSACTION_TYPES.SHIP);
-    }
-
-    function handleReserveStock(product) {
-        openTransaction(product, INVENTORY_TRANSACTION_TYPES.RESERVE);
-    }
-
     function handleDamageStock(product) {
         openTransaction(product, INVENTORY_TRANSACTION_TYPES.DAMAGE);
     }
@@ -102,33 +100,23 @@ export default function InventoryPage() {
                     Inventory
                 </h1>
 
-                <div className="mt-6 flex gap-4">
-
-                    <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
-                        All
-                    </button>
-
-                    <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
-                        Grass Cutters
-                    </button>
-
-                    <button className="rounded-lg bg-gray-200 px-4 py-2 hover:bg-gray-300">
-                        Generators
-                    </button>
+                <div className="mt-6">
+                    <ProductSearch
+                        value={searchTerm}
+                        onChange={setSearchTerm}
+                    />
                 </div>
 
             </div>
             {/* Product Grid */}
 
             <ItemGrid>
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                     <ItemCard
                         mode="inventory"
                         key={product.id}
                         product={product}
                         onReceiveStock={handleReceiveStock}
-                        onShipStock={handleShipStock}
-                        onReserveStock={handleReserveStock}
                         onDamageStock={handleDamageStock}
                     />
                 ))}

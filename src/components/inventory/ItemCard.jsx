@@ -2,6 +2,8 @@ import Image from "next/image";
 
 import StatusPill from "./StatusPill";
 
+import { useEffect, useMemo, useState } from "react";
+
 import { useAuth } from "@/context/AuthContext";
 
 export default function ItemCard({
@@ -13,8 +15,6 @@ export default function ItemCard({
   onDelete,
 
   onReceiveStock,
-  onShipStock,
-  onReserveStock,
   onDamageStock,
 }) {
   const isCatalog = mode === "catalog";
@@ -66,22 +66,6 @@ export default function ItemCard({
 
               <button
                 type="button"
-                onClick={() => onShipStock?.(product)}
-                className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
-              >
-                Ship
-              </button>
-
-              <button
-                type="button"
-                onClick={() => onReserveStock?.(product)}
-                className="rounded-lg bg-yellow-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-yellow-600"
-              >
-                Reserve
-              </button>
-
-              <button
-                type="button"
                 onClick={() => onDamageStock?.(product)}
                 className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700"
               >
@@ -94,23 +78,23 @@ export default function ItemCard({
             {isCatalog && (
               <div className="flex gap-2">
                 {canEdit && (
-                <button
-                  type="button"
-                  onClick={() => onEdit?.(product)}
-                  className="flex-1 rounded-lg border border-blue-600 px-3 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50"
-                >
-                  Edit
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => onEdit?.(product)}
+                    className="flex-1 rounded-lg border border-blue-600 px-3 py-2 text-sm font-medium text-blue-600 transition hover:bg-blue-50"
+                  >
+                    Edit
+                  </button>
                 )}
-              {canDelete && (
-                <button
-                  type="button"
-                  onClick={() => onDelete?.(product)}
-                  className="flex-1 rounded-lg border border-red-600 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
-                >
-                  Delete
-                </button>
-              )}
+                {canDelete && (
+                  <button
+                    type="button"
+                    onClick={() => onDelete?.(product)}
+                    className="flex-1 rounded-lg border border-red-600 px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             )}
           </div>
