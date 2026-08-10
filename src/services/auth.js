@@ -5,24 +5,51 @@ import { supabase } from "@/lib/supabase/client";
    ========================================================================== */
 
 export async function login(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } =
+        await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+
+    if (error) {
+        throw error;
+    }
+
+    return data;
+}
+
+export async function signup({
     email,
     password,
-  });
+    firstName,
+    lastName,
+}) {
+    const { data, error } =
+        await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    first_name: firstName,
+                    last_name: lastName,
+                },
+            },
+        });
 
-  if (error) {
-    throw error;
-  }
+    if (error) {
+        throw error;
+    }
 
-  return data;
+    return data;
 }
 
 export async function logout() {
-  const { error } = await supabase.auth.signOut();
+    const { error } =
+        await supabase.auth.signOut();
 
-  if (error) {
-    throw error;
-  }
+    if (error) {
+        throw error;
+    }
 }
 
 /* ==========================================================================
@@ -30,27 +57,27 @@ export async function logout() {
    ========================================================================== */
 
 export async function getCurrentUser() {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+    const {
+        data: { user },
+        error,
+    } = await supabase.auth.getUser();
 
-  if (error) {
-    throw error;
-  }
+    if (error) {
+        throw error;
+    }
 
-  return user;
+    return user;
 }
 
 export async function getCurrentSession() {
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
+    const {
+        data: { session },
+        error,
+    } = await supabase.auth.getSession();
 
-  if (error) {
-    throw error;
-  }
+    if (error) {
+        throw error;
+    }
 
-  return session;
+    return session;
 }
