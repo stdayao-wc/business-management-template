@@ -18,7 +18,6 @@ export default function Logo({
         px-2
         py-2
         transition-colors
-        hover:bg-gray-100
       "
     >
       {src && (

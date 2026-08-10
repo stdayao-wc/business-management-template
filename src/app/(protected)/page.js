@@ -1,112 +1,202 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import LogoutButton from "@/components/auth/LogoutButton";
 import DashboardActivityCard from "@/components/dashboard/DashboardActivityCard";
 import DashboardChartCard from "@/components/dashboard/DashboardChartCard";
-import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardSection from "@/components/dashboard/DashboardSection";
 import DashboardStatCard from "@/components/dashboard/DashboardStatCard";
 import DashboardStatsGrid from "@/components/dashboard/DashboardStatsGrid";
-
 import SalesChart from "@/components/dashboard/SalesChart";
 
+import {
+    getDashboardStats,
+    getMonthlySales,
+    getRecentActivity,
+} from "@/services/dashboard";
+
+function formatCurrency(value) {
+    return `₱${Number(value ?? 0).toLocaleString(
+        "en-PH",
+        {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        }
+    )}`;
+}
+
+function formatActivityDate(date) {
+    return new Date(date).toLocaleString(
+        "en-PH",
+        {
+            dateStyle: "medium",
+            timeStyle: "short",
+        }
+    );
+}
+
 export default function Home() {
+    const [stats, setStats] = useState({
+        products: 0,
+        ordersToday: 0,
+        revenue: 0,
+    });
+
+    const [monthlySales, setMonthlySales] =
+        useState([]);
+
+    const [recentActivity, setRecentActivity] =
+        useState([]);
+
+    const [loading, setLoading] =
+        useState(true);
+
+    useEffect(() => {
+        async function loadDashboard() {
+            try {
+                setLoading(true);
+
+                const [
+                    statsData,
+                    monthlySalesData,
+                    activityData,
+                ] = await Promise.all([
+                    getDashboardStats(),
+                    getMonthlySales(),
+                    getRecentActivity(),
+                ]);
+
+                setStats(statsData);
+                setMonthlySales(
+                    monthlySalesData
+                );
+                setRecentActivity(
+                    activityData
+                );
+            } catch (error) {
+                console.error(
+                    "Failed to load dashboard:",
+                    error
+                );
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        loadDashboard();
+    }, []);
+
     return (
         <>
-            <DashboardHeader
-                title="Dashboard"
-                subtitle="Welcome back! Here's an overview of your business."
-            />
-
             {/* Statistics */}
+
             <DashboardSection>
                 <DashboardStatsGrid>
                     <DashboardStatCard
                         title="Products"
-                        value="328"
-                        subtitle="+12 added this month"
+                        value={
+                            loading
+                                ? "..."
+                                : stats.products.toLocaleString()
+                        }
                     />
 
                     <DashboardStatCard
                         title="Orders Today"
-                        value="82"
-                        subtitle="+8 since yesterday"
+                        value={
+                            loading
+                                ? "..."
+                                : stats.ordersToday.toLocaleString()
+                        }
                     />
 
                     <DashboardStatCard
                         title="Revenue"
-                        value="₱125,430"
-                        subtitle="+15% from last month"
+                        value={
+                            loading
+                                ? "..."
+                                : formatCurrency(
+                                      stats.revenue
+                                  )
+                        }
                     />
 
                     <DashboardStatCard
-                        title="Customers"
-                        value="1,240"
-                        subtitle="+42 new customers"
+                        title="Sales This Month"
+                        value={
+                            loading
+                                ? "..."
+                                : formatCurrency(
+                                      monthlySales[
+                                          new Date().getMonth()
+                                      ]?.sales
+                                  )
+                        }
                     />
                 </DashboardStatsGrid>
             </DashboardSection>
 
             {/* Sales Chart + Activity */}
+
             <DashboardSection>
                 <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-
                     <div className="xl:col-span-2">
                         <DashboardChartCard title="Monthly Sales">
-                            <SalesChart />
+                            <SalesChart
+                                data={monthlySales}
+                            />
                         </DashboardChartCard>
                     </div>
 
                     <DashboardActivityCard title="Recent Activity">
                         <div className="space-y-5 text-sm">
-
-                            <div className="border-b pb-3">
-                                <p className="font-semibold">
-                                    John added Fujima NG-45
-                                </p>
+                            {loading ? (
                                 <p className="text-gray-500">
-                                    Inventory • 5 minutes ago
+                                    Loading activity...
                                 </p>
-                            </div>
-
-                            <div className="border-b pb-3">
-                                <p className="font-semibold">
-                                    Mary updated Hoyoma Japan GX35
-                                </p>
+                            ) : recentActivity.length === 0 ? (
                                 <p className="text-gray-500">
-                                    Inventory • 18 minutes ago
+                                    No recent activity.
                                 </p>
-                            </div>
+                            ) : (
+                                recentActivity.map(
+                                    (activity) => (
+                                        <div
+                                            key={
+                                                activity.id
+                                            }
+                                            className="border-b pb-3 last:border-b-0"
+                                        >
+                                            <p className="font-semibold">
+                                                {
+                                                    activity.title
+                                                }
+                                            </p>
 
-                            <div className="border-b pb-3">
-                                <p className="font-semibold">
-                                    Purchase Order #421 created
-                                </p>
-                                <p className="text-gray-500">
-                                    Purchasing • 1 hour ago
-                                </p>
-                            </div>
+                                            <p className="text-gray-500">
+                                                {
+                                                    activity.description
+                                                }
+                                            </p>
 
-                            <div className="border-b pb-3">
-                                <p className="font-semibold">
-                                    Invoice #1034 paid
-                                </p>
-                                <p className="text-gray-500">
-                                    Finance • 2 hours ago
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="font-semibold">
-                                    New customer registered
-                                </p>
-                                <p className="text-gray-500">
-                                    Customer Management • Today
-                                </p>
-                            </div>
-
+                                            <p className="mt-1 text-xs text-gray-400">
+                                                {
+                                                    activity.type
+                                                }{" "}
+                                                •{" "}
+                                                {formatActivityDate(
+                                                    activity.date
+                                                )}
+                                            </p>
+                                        </div>
+                                    )
+                                )
+                            )}
                         </div>
                     </DashboardActivityCard>
-
                 </div>
+
                 <LogoutButton />
             </DashboardSection>
         </>
