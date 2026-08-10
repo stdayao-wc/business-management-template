@@ -359,7 +359,8 @@ export async function getAvailableStock(productId) {
  */
 export async function getAvailableInventoryItems(
     productId,
-    quantity
+    quantity,
+    excludeIds = []
 ) {
     const inStockStatus = await getInventoryStatus(
         INVENTORY_ITEM_STATUSES.IN_STOCK
@@ -371,17 +372,24 @@ export async function getAvailableInventoryItems(
         .eq("product_id", productId)
         .eq("status_id", inStockStatus.id)
         .order("id")
-        .limit(quantity);
+        .limit(quantity + excludeIds.length);
 
     if (error) {
         throw error;
     }
 
-    if (data.length < quantity) {
+    const excludedIds = new Set(excludeIds);
+
+    const availableItems = data.filter(
+        (item) => !excludedIds.has(item.id)
+    );
+
+    if (availableItems.length < quantity) {
         throw new Error("Not enough stock.");
     }
 
-    return data;
+    return availableItems.slice(0, quantity);
+
 }
 
 /**
@@ -455,7 +463,7 @@ export async function getInventoryItems(productId) {
     if (!productId) {
         throw new Error("Product ID is required.");
     }
-    
+
 const { data, error } = await supabase
     .from(INVENTORY_TABLE)
     .select(`
@@ -527,4 +535,84 @@ const { data, error } = await supabase
         status: statusMap[item.status_id] ?? null,
         location: locationMap[item.location_id] ?? null,
     }));
+}
+
+export async function getInventoryItemByCode(itemCode) {
+    if (!itemCode?.trim()) {
+        throw new Error("Item code is required.");
+    }
+
+    const normalizedCode = itemCode.trim();
+
+    const { data, error } = await supabase
+        .from(INVENTORY_TABLE)
+        .select(`
+            id,
+            product_id,
+            item_code,
+            status_id,
+            location_id,
+            received_at,
+            sold_at
+        `)
+        .eq("item_code", normalizedCode)
+        .maybeSingle();
+
+    if (error) {
+        throw error;
+    }
+
+    if (!data) {
+        return null;
+    }
+
+    const [
+        statusResult,
+        locationResult,
+        productResult,
+    ] = await Promise.all([
+        supabase
+            .from(STATUS_TABLE)
+            .select("id, name")
+            .eq("id", data.status_id)
+            .single(),
+
+        supabase
+            .from("locations")
+            .select("id, name")
+            .eq("id", data.location_id)
+            .single(),
+
+        supabase
+            .from("products")
+            .select(`
+                id,
+                sku,
+                name,
+                selling_price,
+                cost_price,
+                is_active
+            `)
+            .eq("id", data.product_id)
+            .single(),
+    ]);
+
+    if (statusResult.error) {
+        throw statusResult.error;
+    }
+
+    if (locationResult.error) {
+        throw locationResult.error;
+    }
+
+    if (productResult.error) {
+        throw productResult.error;
+    }
+
+    return {
+        ...data,
+        status: statusResult.data,
+        location: locationResult.data,
+        product: productResult.data,
+    };
 }

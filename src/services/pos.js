@@ -4,6 +4,7 @@ import { getProducts } from "./products";
 import {
     getInventoryCounts,
     getAvailableInventoryItems,
+    getInventoryItemByCode,
     sellInventoryItems,
 } from "./inventory";
 
@@ -18,6 +19,40 @@ export function calculateTotals(cart) {
         subtotal,
         total: subtotal,
     };
+}
+
+async function validateExactInventoryItems(item) {
+    const exactItems = item.inventoryItems ?? [];
+
+    if (!exactItems.length) {
+        return null;
+    }
+
+    for (const inventoryItem of exactItems) {
+        const currentItem =
+            await getInventoryItemByCode(
+                inventoryItem.item_code
+            );
+
+        if (!currentItem) {
+            return {
+                valid: false,
+                message: `Inventory item ${inventoryItem.item_code} was not found.`,
+            };
+        }
+
+        if (
+            currentItem.status?.name !==
+            "IN_STOCK"
+        ) {
+            return {
+                valid: false,
+                message: `Inventory item ${inventoryItem.item_code} is no longer available.`,
+            };
+        }
+    }
+
+    return null;
 }
 
 /**
@@ -39,17 +74,41 @@ export async function validateCart(cart) {
             };
         }
 
-        const availableItems =
-            await getAvailableInventoryItems(
-                item.product.id,
-                item.quantity
-            );
+        const exactValidation =
+            await validateExactInventoryItems(item);
 
-        if (availableItems.length < item.quantity) {
-            return {
-                valid: false,
-                message: `Not enough stock for ${item.product.name}.`,
-            };
+        if (exactValidation) {
+            return exactValidation;
+        }
+
+        const exactItems =
+            item.inventoryItems ?? [];
+
+        const additionalQuantity = Math.max(
+            0,
+            item.quantity - exactItems.length
+        );
+
+        if (additionalQuantity > 0) {
+            const availableItems =
+                await getAvailableInventoryItems(
+                    item.product.id,
+                    additionalQuantity,
+                    exactItems.map(
+                        (inventoryItem) =>
+                            inventoryItem.id
+                    )
+                );
+
+            if (
+                availableItems.length <
+                additionalQuantity
+            ) {
+                return {
+                    valid: false,
+                    message: `Not enough stock for ${item.product.name}.`,
+                };
+            }
         }
     }
 
@@ -218,11 +277,41 @@ export async function checkout({
     await createSaleItems(sale.id, cart);
 
     for (const item of cart) {
-        const inventoryItems =
-            await getAvailableInventoryItems(
-                item.product.id,
-                item.quantity
+        const exactItems =
+            item.inventoryItems ?? [];
+
+        const additionalQuantity = Math.max(
+            0,
+            item.quantity - exactItems.length
+        );
+
+        let additionalItems = [];
+
+        if (additionalQuantity > 0) {
+            additionalItems =
+                await getAvailableInventoryItems(
+                    item.product.id,
+                    additionalQuantity,
+                    exactItems.map(
+                        (inventoryItem) =>
+                            inventoryItem.id
+                    )
+                );
+        }
+
+        const inventoryItems = [
+            ...exactItems,
+            ...additionalItems,
+        ];
+
+        if (
+            inventoryItems.length !==
+            item.quantity
+        ) {
+            throw new Error(
+                `Unable to allocate inventory for ${item.product.name}.`
             );
+        }
 
         await sellInventoryItems(
             inventoryItems,
@@ -316,4 +405,62 @@ function validateShippingDetails({
             "Shipping address is required for delivery."
         );
     }
+}
+
+async function resolveInventoryItemsForCartItem(
+    item
+) {
+    const exactItems =
+        item.inventoryItems ?? [];
+
+    const exactIds = new Set(
+        exactItems.map(
+            (inventoryItem) =>
+                inventoryItem.id
+        )
+    );
+
+    if (
+        exactItems.length >= item.quantity
+    ) {
+        return exactItems.slice(
+            0,
+            item.quantity
+        );
+    }
+
+    const additionalQuantity =
+        item.quantity -
+        exactItems.length;
+
+    const availableItems =
+        await getAvailableInventoryItems(
+            item.product.id,
+            additionalQuantity
+        );
+
+    const additionalItems =
+        availableItems.filter(
+            (inventoryItem) =>
+                !exactIds.has(
+                    inventoryItem.id
+                )
+        );
+
+    if (
+        additionalItems.length <
+        additionalQuantity
+    ) {
+        throw new Error(
+            `Not enough stock for ${item.product.name}.`
+        );
+    }
+
+    return [
+        ...exactItems,
+        ...additionalItems.slice(
+            0,
+            additionalQuantity
+        ),
+    ];
 }

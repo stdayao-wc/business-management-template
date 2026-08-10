@@ -16,6 +16,16 @@ import {
 } from "@/services/products";
 import ProductSearch from "@/components/pos/ProductSearch";
 
+import QRScanner from "@/components/scanner/QRScanner";
+
+import InventoryItemDetailsModal from "@/components/inventory/InventoryItemDetailsModal";
+
+import {
+    getInventoryItemByCode,
+} from "@/services/inventory";
+
+import { toast } from "sonner";
+
 export default function InventoryPage() {
     const [products, setProducts] = useState([]);
 
@@ -55,6 +65,15 @@ export default function InventoryPage() {
             );
         });
     }, [products, searchTerm]);
+
+    const [scannerOpen, setScannerOpen] =
+        useState(false);
+
+    const [scannedItem, setScannedItem] =
+        useState(null);
+
+    const [detailsOpen, setDetailsOpen] =
+        useState(false);
 
     async function loadInventory() {
         try {
@@ -108,6 +127,37 @@ export default function InventoryPage() {
         setIsItemsModalOpen(false);
     }
 
+    async function handleScan(itemCode) {
+        try {
+            const item =
+                await getInventoryItemByCode(
+                    itemCode
+                );
+
+            if (!item) {
+                toast.error(
+                    `Item ${itemCode} was not found.`
+                );
+
+                return;
+            }
+
+            setScannedItem(item);
+            setScannerOpen(false);
+            setDetailsOpen(true);
+        } catch (error) {
+            console.error(
+                "QR scan failed:",
+                error
+            );
+
+            toast.error(
+                error?.message ||
+                    "Unable to find inventory item."
+            );
+        }
+    }
+
     return (
         <div className="space-y-10">
 
@@ -119,12 +169,22 @@ export default function InventoryPage() {
                     Inventory
                 </h1>
 
-                <div className="mt-6">
-                    <ProductSearch
-                        value={searchTerm}
-                        onChange={setSearchTerm}
-                    />
-                </div>
+<div className="grid gap-3 md:grid-cols-[1fr_auto]">
+    <ProductSearch
+        value={searchTerm}
+        onChange={setSearchTerm}
+    />
+
+    <button
+        type="button"
+        onClick={() =>
+            setScannerOpen(true)
+        }
+        className="rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
+    >
+        Scan QR
+    </button>
+</div>
 
             </div>
             {/* Product Grid */}
@@ -153,6 +213,22 @@ export default function InventoryPage() {
                 product={selectedInventoryProduct}
                 onClose={handleCloseItemsModal}
             />
+            <QRScanner
+    open={scannerOpen}
+    onScan={handleScan}
+    onClose={() =>
+        setScannerOpen(false)
+    }
+/>
+
+<InventoryItemDetailsModal
+    open={detailsOpen}
+    item={scannedItem}
+    onClose={() => {
+        setDetailsOpen(false);
+        setScannedItem(null);
+    }}
+/>
         </div>
     );
 }
