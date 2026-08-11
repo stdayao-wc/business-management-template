@@ -12,7 +12,7 @@ export default function SignupPage() {
                     </h1>
 
                     <p className="mt-2 text-sm text-gray-500">
-                        Create your Diskarte Pinoy TV account.
+                        Create your Diskarte Pinoy TV account
                     </p>
                 </div>
 
