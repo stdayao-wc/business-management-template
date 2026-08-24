@@ -4,293 +4,428 @@ import { useMemo, useState, useEffect } from "react";
 
 import Modal from "@/components/common/Modal";
 
-export default function CheckoutDialog({
-    open,
-    totals,
-    onClose,
-    onConfirm,
-}) {
-    const [paymentMethod, setPaymentMethod] =
-        useState("Cash");
+export default function CheckoutDialog({ open, totals, onClose, onConfirm }) {
+  const [paymentType, setPaymentType] = useState("FULL_PAYMENT");
 
-    const [amountReceived, setAmountReceived] =
-        useState(totals.total);
+  const [paymentMethod, setPaymentMethod] = useState("Cash");
 
-    const [notes, setNotes] = useState("");
+  const [discountAmount, setDiscountAmount] = useState(0);
 
-    const [processing, setProcessing] = useState(false);
+  const [shippingFee, setShippingFee] = useState(0);
 
-    const [shippingMethod, setShippingMethod] =
-        useState("PICKUP");
+  const [amountReceived, setAmountReceived] = useState(totals.total);
 
-    const [customerName, setCustomerName] =
-        useState("");
+  const [notes, setNotes] = useState("");
 
-    const [customerPhone, setCustomerPhone] =
-        useState("");
+  const [processing, setProcessing] = useState(false);
 
-    const [shippingAddress, setShippingAddress] =
-        useState("");
+  const [shippingMethod, setShippingMethod] = useState("PICKUP");
 
-    const changeGiven = useMemo(() => {
-        const amount = Number(amountReceived);
+  const [customerName, setCustomerName] = useState("");
 
-        if (Number.isNaN(amount)) {
-            return 0;
-        }
+  const [customerPhone, setCustomerPhone] = useState("");
 
-        return Math.max(amount - totals.total, 0);
-    }, [amountReceived, totals.total]);
+  const [shippingAddress, setShippingAddress] = useState("");
 
-    async function handleConfirm() {
-        if (processing) {
-            return;
-        }
+  const checkoutTotal = useMemo(() => {
+    const subtotal = Number(totals.subtotal) || 0;
 
-        setProcessing(true);
+    const discount = Number(discountAmount) || 0;
 
-        try {
-            await onConfirm({
-                shippingMethod,
-                customerName,
-                customerPhone,
-                shippingAddress:
-                    shippingMethod === "PICKUP"
-                        ? ""
-                        : shippingAddress,
+    const shipping = Number(shippingFee) || 0;
 
-                paymentMethod,
-                amountReceived: Number(amountReceived),
-                changeGiven,
-                notes,
-            });
-        } finally {
-            setProcessing(false);
-        }
+    return Math.max(subtotal - discount + shipping, 0);
+  }, [totals.subtotal, discountAmount, shippingFee]);
+
+  const normalizedAmountReceived = Number(amountReceived);
+
+  const changeGiven = useMemo(() => {
+    if (paymentType === "DOWNPAYMENT") {
+      return 0;
     }
 
-    useEffect(() => {
-        if (!open) {
-            return;
-        }
+    if (!Number.isFinite(normalizedAmountReceived)) {
+      return 0;
+    }
 
-        setShippingMethod("PICKUP");
-        setCustomerName("");
-        setCustomerPhone("");
-        setShippingAddress("");
+    return Math.max(normalizedAmountReceived - checkoutTotal, 0);
+  }, [paymentType, normalizedAmountReceived, checkoutTotal]);
 
-        setPaymentMethod("Cash");
-        setAmountReceived(0);
-        setNotes("");
-    }, [open, totals.total]);
+  const remainingBalance = useMemo(() => {
+    if (paymentType !== "DOWNPAYMENT") {
+      return 0;
+    }
 
-    return (
-        <Modal
-            open={open}
-            title="Checkout"
-            onClose={onClose}
-        >
-            <div className="space-y-6">
+    if (!Number.isFinite(normalizedAmountReceived)) {
+      return checkoutTotal;
+    }
 
-                {/* Totals */}
+    return Math.max(checkoutTotal - normalizedAmountReceived, 0);
+  }, [paymentType, normalizedAmountReceived, checkoutTotal]);
 
-                <div className="rounded-lg border p-4 space-y-2">
-                    <div className="flex justify-between">
-                        <span>Subtotal</span>
-                        <span>
-                            ₱{totals.subtotal.toFixed(2)}
-                        </span>
-                    </div>
+  const canConfirm = useMemo(() => {
+    if (processing) {
+      return false;
+    }
 
-                    <div className="flex justify-between text-lg font-semibold">
-                        <span>Total</span>
-                        <span>
-                            ₱{totals.total.toFixed(2)}
-                        </span>
-                    </div>
-                </div>
+    if (!Number.isFinite(normalizedAmountReceived)) {
+      return false;
+    }
 
-                {/* Payment */}
+    if (paymentType === "DOWNPAYMENT") {
+      return (
+        normalizedAmountReceived > 0 && normalizedAmountReceived < checkoutTotal
+      );
+    }
 
-                <div className="space-y-4">
+    return normalizedAmountReceived >= checkoutTotal;
+  }, [processing, normalizedAmountReceived, paymentType, checkoutTotal]);
 
-                    <div>
-                        <label className="mb-1 block text-sm font-medium">
-                            Payment Method
-                        </label>
+  async function handleConfirm() {
+    if (!canConfirm) {
+      return;
+    }
 
-                        <select
-                            value={paymentMethod}
-                            onChange={(e) =>
-                                setPaymentMethod(
-                                    e.target.value
-                                )
-                            }
-                            className="w-full rounded-lg border px-3 py-2"
-                        >
-                            <option value="Cash">
-                                Cash
-                            </option>
-                        </select>
-                    </div>
+    setProcessing(true);
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                            Shipping Method
-                        </label>
+    try {
+      await onConfirm({
+        shippingMethod,
+        customerName,
+        customerPhone,
 
-                        <select
-                            value={shippingMethod}
-                            onChange={(e) =>
-                                setShippingMethod(e.target.value)
-                            }
-                            disabled={processing}
-                            className="w-full rounded-lg border px-3 py-2"
-                        >
-                            <option value="PICKUP">
-                                Pickup
-                            </option>
+        shippingAddress: shippingMethod === "PICKUP" ? "" : shippingAddress,
 
-                            <option value="LBC">
-                                LBC
-                            </option>
+        paymentType,
+        paymentMethod,
 
-                            <option value="J&T">
-                                J&T
-                            </option>
-                        </select>
-                    </div>
+        discountAmount: Number(discountAmount) || 0,
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                            Customer Name
-                        </label>
+        shippingFee: Number(shippingFee) || 0,
 
-                        <input
-                            type="text"
-                            value={customerName}
-                            onChange={(e) =>
-                                setCustomerName(e.target.value)
-                            }
-                            disabled={processing}
-                            className="w-full rounded-lg border px-3 py-2"
-                            placeholder="Enter customer name"
-                        />
-                    </div>
+        amountReceived: normalizedAmountReceived,
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">
-                            Customer Number
-                        </label>
+        isDownpayment: paymentType === "DOWNPAYMENT",
 
-                        <input
-                            type="tel"
-                            value={customerPhone}
-                            onChange={(e) =>
-                                setCustomerPhone(e.target.value)
-                            }
-                            disabled={processing}
-                            className="w-full rounded-lg border px-3 py-2"
-                            placeholder="Enter customer number"
-                        />
-                    </div>
+        downpaymentAmount:
+          paymentType === "DOWNPAYMENT" ? normalizedAmountReceived : 0,
 
-                    {shippingMethod !== "PICKUP" && (
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">
-                                Shipping Address
-                            </label>
+        changeGiven,
+        notes,
+      });
+    } finally {
+      setProcessing(false);
+    }
+  }
 
-                            <textarea
-                                value={shippingAddress}
-                                onChange={(e) =>
-                                    setShippingAddress(e.target.value)
-                                }
-                                disabled={processing}
-                                className="w-full rounded-lg border px-3 py-2"
-                                rows={3}
-                                placeholder="Enter complete shipping address"
-                            />
-                        </div>
-                    )}
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
 
-                    <div>
-                        <label className="mb-1 block text-sm font-medium">
-                            Amount Received
-                        </label>
+    setPaymentType("FULL_PAYMENT");
 
-                        <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={amountReceived}
-                            onChange={(e) =>
-                                setAmountReceived(
-                                    e.target.value
-                                )
-                            }
-                            className="w-full rounded-lg border px-3 py-2"
-                        />
-                    </div>
+    setShippingMethod("PICKUP");
 
-                    <div>
-                        <label className="mb-1 block text-sm font-medium">
-                            Change
-                        </label>
+    setCustomerName("");
 
-                        <input
-                            value={`₱${changeGiven.toFixed(2)}`}
-                            readOnly
-                            className="w-full rounded-lg border bg-gray-100 px-3 py-2"
-                        />
-                    </div>
+    setCustomerPhone("");
 
-                    <div>
-                        <label className="mb-1 block text-sm font-medium">
-                            Notes
-                        </label>
+    setShippingAddress("");
 
-                        <textarea
-                            rows={3}
-                            value={notes}
-                            onChange={(e) =>
-                                setNotes(
-                                    e.target.value
-                                )
-                            }
-                            className="w-full rounded-lg border px-3 py-2"
-                        />
-                    </div>
+    setPaymentMethod("Cash");
 
-                </div>
+    setDiscountAmount(0);
 
-                {/* Actions */}
+    setShippingFee(0);
 
-                <div className="flex justify-end gap-3">
+    setAmountReceived(totals.total);
 
-                    <button
-                        onClick={onClose}
-                        disabled={processing}
-                        className="rounded-lg border px-4 py-2"
-                    >
-                        Cancel
-                    </button>
+    setNotes("");
+  }, [open, totals.total]);
 
-                    <button
-                        onClick={handleConfirm}
-                        disabled={
-                            processing ||
-                            Number(amountReceived) <
-                            totals.total
-                        }
-                        className="rounded-lg bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
-                    >
-                        Confirm Sale
-                    </button>
+  return (
+    <Modal open={open} title="Checkout" onClose={onClose}>
+      <div className="space-y-6">
+        {/* Totals */}
 
-                </div>
+        <div className="space-y-2 rounded-lg border p-4">
+          <div className="flex justify-between">
+            <span>Subtotal</span>
 
+            <span>₱{Number(totals.subtotal).toFixed(2)}</span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>Discount</span>
+
+            <span>
+              -₱
+              {(Number(discountAmount) || 0).toFixed(2)}
+            </span>
+          </div>
+
+          <div className="flex justify-between">
+            <span>Shipping Fee</span>
+
+            <span>₱{(Number(shippingFee) || 0).toFixed(2)}</span>
+          </div>
+
+          <div className="flex justify-between border-t pt-2 text-lg font-semibold">
+            <span>Total</span>
+
+            <span>₱{checkoutTotal.toFixed(2)}</span>
+          </div>
+        </div>
+
+        {/* Payment */}
+
+        <div className="space-y-4">
+          {/* Payment Type */}
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">
+              Payment Type
+            </label>
+
+            <select
+              value={paymentType}
+              onChange={(e) => {
+                const type = e.target.value;
+
+                setPaymentType(type);
+
+                if (type === "FULL_PAYMENT") {
+                  setAmountReceived(checkoutTotal);
+                } else {
+                  setAmountReceived(0);
+                }
+              }}
+              disabled={processing}
+              className="w-full rounded-lg border px-3 py-2"
+            >
+              <option value="FULL_PAYMENT">Full Payment</option>
+
+              <option value="DOWNPAYMENT">Downpayment</option>
+            </select>
+          </div>
+
+          {/* Payment Method */}
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">
+              Payment Method
+            </label>
+
+            <select
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+              disabled={processing}
+              className="w-full rounded-lg border px-3 py-2"
+            >
+              <option value="Cash">Cash</option>
+            </select>
+          </div>
+
+          {/* Discount */}
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">Discount</label>
+
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={discountAmount}
+              onChange={(e) => setDiscountAmount(e.target.value)}
+              disabled={processing}
+              className="w-full rounded-lg border px-3 py-2"
+              placeholder="Enter discount amount"
+            />
+          </div>
+
+          {/* Shipping Fee */}
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">
+              Shipping Fee
+            </label>
+
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={shippingFee}
+              onChange={(e) => setShippingFee(e.target.value)}
+              disabled={processing || shippingMethod === "PICKUP"}
+              className="w-full rounded-lg border px-3 py-2"
+              placeholder="Enter shipping fee"
+            />
+          </div>
+
+          {/* Shipping Method */}
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Shipping Method</label>
+
+            <select
+              value={shippingMethod}
+              onChange={(e) => {
+                const method = e.target.value;
+
+                setShippingMethod(method);
+
+                if (method === "PICKUP") {
+                  setShippingFee(0);
+                }
+              }}
+              disabled={processing}
+              className="w-full rounded-lg border px-3 py-2"
+            >
+              <option value="PICKUP">Pickup</option>
+
+              <option value="LBC">LBC</option>
+
+              <option value="J&T">J&T</option>
+            </select>
+          </div>
+
+          {/* Customer Name */}
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Customer Name</label>
+
+            <input
+              type="text"
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              disabled={processing}
+              className="w-full rounded-lg border px-3 py-2"
+              placeholder="Enter customer name"
+            />
+          </div>
+
+          {/* Customer Number */}
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Customer Number</label>
+
+            <input
+              type="tel"
+              value={customerPhone}
+              onChange={(e) => setCustomerPhone(e.target.value)}
+              disabled={processing}
+              className="w-full rounded-lg border px-3 py-2"
+              placeholder="Enter customer number"
+            />
+          </div>
+
+          {/* Shipping Address */}
+
+          {shippingMethod !== "PICKUP" && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Shipping Address</label>
+
+              <textarea
+                value={shippingAddress}
+                onChange={(e) => setShippingAddress(e.target.value)}
+                disabled={processing}
+                className="w-full rounded-lg border px-3 py-2"
+                rows={3}
+                placeholder="Enter complete shipping address"
+              />
             </div>
-        </Modal>
-    );
+          )}
+
+          {/* Amount Received */}
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">
+              {paymentType === "DOWNPAYMENT"
+                ? "Downpayment Amount"
+                : "Amount Received"}
+            </label>
+
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={amountReceived}
+              onChange={(e) => setAmountReceived(e.target.value)}
+              disabled={processing}
+              className="w-full rounded-lg border px-3 py-2"
+            />
+          </div>
+
+          {/* Remaining Balance */}
+
+          {paymentType === "DOWNPAYMENT" && (
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Remaining Balance
+              </label>
+
+              <input
+                value={`₱${remainingBalance.toFixed(2)}`}
+                readOnly
+                className="w-full rounded-lg border bg-gray-100 px-3 py-2"
+              />
+            </div>
+          )}
+
+          {/* Change */}
+
+          {paymentType === "FULL_PAYMENT" && (
+            <div>
+              <label className="mb-1 block text-sm font-medium">Change</label>
+
+              <input
+                value={`₱${changeGiven.toFixed(2)}`}
+                readOnly
+                className="w-full rounded-lg border bg-gray-100 px-3 py-2"
+              />
+            </div>
+          )}
+
+          {/* Notes */}
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">Notes</label>
+
+            <textarea
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              disabled={processing}
+              className="w-full rounded-lg border px-3 py-2"
+            />
+          </div>
+        </div>
+
+        {/* Actions */}
+
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            disabled={processing}
+            className="rounded-lg border px-4 py-2"
+          >
+            Cancel
+          </button>
+
+          <button
+            onClick={handleConfirm}
+            disabled={!canConfirm}
+            className="rounded-lg bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
+          >
+            {processing
+              ? "Processing..."
+              : paymentType === "DOWNPAYMENT"
+                ? "Confirm Downpayment"
+                : "Confirm Sale"}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
 }

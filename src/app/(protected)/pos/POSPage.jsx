@@ -15,9 +15,7 @@ import ReceiptModal from "@/components/pos/ReceiptModal";
 import { toast } from "sonner";
 import QRScanner from "@/components/scanner/QRScanner";
 
-import {
-    getInventoryItemByCode,
-} from "@/services/inventory";
+import { getInventoryItemByCode } from "@/services/inventory";
 
 export default function POSPage() {
   const [products, setProducts] = useState([]);
@@ -26,8 +24,7 @@ export default function POSPage() {
   const [receipt, setReceipt] = useState(null);
   const { user, profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [scannerOpen, setScannerOpen] =
-    useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   function openCheckout() {
     setCheckoutOpen(true);
@@ -49,6 +46,12 @@ export default function POSPage() {
         shippingAddress: payment.shippingAddress,
 
         paymentMethod: payment.paymentMethod,
+
+        discountAmount: payment.discountAmount,
+        shippingFee: payment.shippingFee,
+
+        isDownpayment: payment.isDownpayment,
+
         amountReceived: payment.amountReceived,
         changeGiven: payment.changeGiven,
         notes: payment.notes,
@@ -77,15 +80,15 @@ export default function POSPage() {
   }
 
   const {
-      cart,
-      totals,
+    cart,
+    totals,
 
-      addToCart,
-      addInventoryItemToCart,
-      increaseQuantity,
-      decreaseQuantity,
-      removeItem,
-      clearCart,
+    addToCart,
+    addInventoryItemToCart,
+    increaseQuantity,
+    decreaseQuantity,
+    removeItem,
+    clearCart,
   } = useCart();
 
   useEffect(() => {
@@ -103,88 +106,55 @@ export default function POSPage() {
 
   async function handleScan(itemCode) {
     try {
-        const inventoryItem =
-            await getInventoryItemByCode(
-                itemCode
-            );
+      const inventoryItem = await getInventoryItemByCode(itemCode);
 
-        if (!inventoryItem) {
-            toast.error(
-                `Item ${itemCode} was not found.`
-            );
+      if (!inventoryItem) {
+        toast.error(`Item ${itemCode} was not found.`);
 
-            return;
-        }
+        return;
+      }
 
-        if (
-            inventoryItem.status?.name !==
-            "IN_STOCK"
-        ) {
-            toast.error(
-                `Item ${itemCode} is not available.`
-            );
+      if (inventoryItem.status?.name !== "IN_STOCK") {
+        toast.error(`Item ${itemCode} is not available.`);
 
-            return;
-        }
+        return;
+      }
 
-        const product = products.find(
-            (product) =>
-                product.id ===
-                inventoryItem.product_id
-        );
+      const product = products.find(
+        (product) => product.id === inventoryItem.product_id,
+      );
 
-        if (!product) {
-            toast.error(
-                "The product for this inventory item could not be found."
-            );
+      if (!product) {
+        toast.error("The product for this inventory item could not be found.");
 
-            return;
-        }
+        return;
+      }
 
-        const existingCartItem =
-            cart.find(
-                (item) =>
-                    item.product.id ===
-                    product.id
-            );
+      const existingCartItem = cart.find(
+        (item) => item.product.id === product.id,
+      );
 
-        const alreadyInCart =
-            existingCartItem?.inventoryItems?.some(
-                (item) =>
-                    item.id ===
-                    inventoryItem.id
-            );
+      const alreadyInCart = existingCartItem?.inventoryItems?.some(
+        (item) => item.id === inventoryItem.id,
+      );
 
-        if (alreadyInCart) {
-            toast.error(
-                `Item ${itemCode} is already in the cart.`
-            );
+      if (alreadyInCart) {
+        toast.error(`Item ${itemCode} is already in the cart.`);
 
-            return;
-        }
+        return;
+      }
 
-        addInventoryItemToCart(
-            product,
-            inventoryItem
-        );
+      addInventoryItemToCart(product, inventoryItem);
 
-        setScannerOpen(false);
+      setScannerOpen(false);
 
-        toast.success(
-            `${product.name} added to cart.`
-        );
+      toast.success(`${product.name} added to cart.`);
     } catch (error) {
-        console.error(
-            "QR scan failed:",
-            error
-        );
+      console.error("QR scan failed:", error);
 
-        toast.error(
-            error?.message ||
-                "Unable to process QR code."
-        );
+      toast.error(error?.message || "Unable to process QR code.");
     }
-}
+  }
 
   const filteredProducts = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -206,21 +176,16 @@ export default function POSPage() {
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
       <div className="space-y-4 lg:col-span-8">
         <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-          <ProductSearch
-              value={searchTerm}
-              onChange={setSearchTerm}
-          />
+          <ProductSearch value={searchTerm} onChange={setSearchTerm} />
 
           <button
-              type="button"
-              onClick={() =>
-                  setScannerOpen(true)
-              }
-              className="rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
+            type="button"
+            onClick={() => setScannerOpen(true)}
+            className="rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
           >
-              Scan QR
+            Scan QR
           </button>
-      </div>
+        </div>
 
         <ProductGrid
           products={filteredProducts}
@@ -255,10 +220,8 @@ export default function POSPage() {
       <QRScanner
         open={scannerOpen}
         onScan={handleScan}
-        onClose={() =>
-            setScannerOpen(false)
-        }
-    />
+        onClose={() => setScannerOpen(false)}
+      />
     </div>
   );
 }
