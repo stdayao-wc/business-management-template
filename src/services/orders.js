@@ -2,6 +2,7 @@ import { supabase } from "@/lib/supabase/client";
 import {
     releaseReservedInventoryItems,
     sellReservedInventoryItems,
+    returnSoldInventoryItems,
 } from "@/services/inventory";
 
 const SALES_TABLE = "sales";
@@ -335,53 +336,89 @@ export async function voidOrder(
         );
     }
 
-    if (
-        order.fulfillment_status !==
-            FULFILLMENT_STATUSES.PENDING &&
-        order.fulfillment_status !==
-            FULFILLMENT_STATUSES.READY_FOR_PICKUP
-    ) {
+    const canVoid =
+        order.fulfillment_status ===
+            FULFILLMENT_STATUSES.PENDING ||
+        order.fulfillment_status ===
+            FULFILLMENT_STATUSES.READY_FOR_PICKUP;
+
+    if (!canVoid) {
         throw new Error(
             "Only orders that have not been picked up or shipped can be voided."
         );
     }
 
-    if (order.is_downpayment) {
-        const {
-            data: transactions,
-            error: transactionError,
-        } = await supabase
-            .from("inventory_transactions")
-            .select(`
-                inventory_item_id,
-                inventory_item:inventory_items (
-                    id,
-                    product_id,
-                    status_id,
-                    location_id
-                )
-            `)
-            .eq("sale_id", orderId)
-            .eq("transaction_type", "ADJUST");
+if (order.is_downpayment) {
+    const {
+        data: reservationTransactions,
+        error: reservationError,
+    } = await supabase
+        .from("inventory_transactions")
+        .select(`
+            inventory_item_id,
+            inventory_item:inventory_items (
+                id,
+                product_id,
+                status_id,
+                location_id
+            )
+        `)
+        .eq("sale_id", orderId)
+        .eq("transaction_type", "ADJUST");
 
-        if (transactionError) {
-            throw transactionError;
-        }
-
-        const reservedItems =
-            transactions
-                ?.map(
-                    (transaction) =>
-                        transaction.inventory_item
-                )
-                .filter(Boolean) ?? [];
-
-        await releaseReservedInventoryItems(
-            reservedItems,
-            performedBy,
-            orderId
-        );
+    if (reservationError) {
+        throw reservationError;
     }
+
+    const reservedItems =
+        reservationTransactions
+            ?.map(
+                (transaction) =>
+                    transaction.inventory_item
+            )
+            .filter(Boolean) ?? [];
+
+    await releaseReservedInventoryItems(
+        reservedItems,
+        performedBy,
+        orderId
+    );
+} else {
+    const {
+        data: sellTransactions,
+        error: sellTransactionError,
+    } = await supabase
+        .from("inventory_transactions")
+        .select(`
+            inventory_item_id,
+            inventory_item:inventory_items (
+                id,
+                product_id,
+                status_id,
+                location_id
+            )
+        `)
+        .eq("sale_id", orderId)
+        .eq("transaction_type", "SELL");
+
+    if (sellTransactionError) {
+        throw sellTransactionError;
+    }
+
+    const soldItems =
+        sellTransactions
+            ?.map(
+                (transaction) =>
+                    transaction.inventory_item
+            )
+            .filter(Boolean) ?? [];
+
+    await returnSoldInventoryItems(
+        soldItems,
+        performedBy,
+        orderId
+    );
+}
 
     const {
         data,

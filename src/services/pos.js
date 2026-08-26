@@ -6,7 +6,8 @@ import {
     getAvailableInventoryItems,
     getInventoryItemByCode,
     sellInventoryItems,
-} from "./inventory";
+    reserveInventoryItems,
+} from "@/services/inventory";
 
 export function calculateTotals(
     cart,
@@ -304,68 +305,6 @@ async function createSaleItems(
     }
 }
 
-async function reserveInventoryItems(
-    items
-) {
-    if (!items.length) {
-        return [];
-    }
-
-    const {
-        data: status,
-        error: statusError,
-    } = await supabase
-        .from(
-            "inventory_item_statuses"
-        )
-        .select("id")
-        .eq(
-            "name",
-            "RESERVED"
-        )
-        .single();
-
-    if (statusError) {
-        throw statusError;
-    }
-
-    const ids =
-        items.map(
-            (item) =>
-                item.id
-        );
-
-    const {
-        data,
-        error,
-    } = await supabase
-        .from("inventory_items")
-        .update({
-            status_id:
-                status.id,
-        })
-        .in(
-            "id",
-            ids
-        )
-        .select();
-
-    if (error) {
-        throw error;
-    }
-
-    if (
-        data.length !==
-        items.length
-    ) {
-        throw new Error(
-            "Unable to reserve all inventory items."
-        );
-    }
-
-    return data;
-}
-
 async function resolveInventoryItemsForCartItem(
     item
 ) {
@@ -621,19 +560,19 @@ export async function checkout({
                     item
                 );
 
-            if (
-                isDownpayment
-            ) {
-                await reserveInventoryItems(
-                    inventoryItems
-                );
-            } else {
-                await sellInventoryItems(
-                    inventoryItems,
-                    cashierId,
-                    sale.id
-                );
-            }
+        if (isDownpayment) {
+            await reserveInventoryItems(
+                inventoryItems,
+                cashierId,
+                sale.id
+            );
+        } else {
+            await sellInventoryItems(
+                inventoryItems,
+                cashierId,
+                sale.id
+            );
+        }
         }
     } catch (error) {
         console.error(

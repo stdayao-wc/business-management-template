@@ -116,7 +116,25 @@ async function createInventoryTransaction({
             notes,
         });
 
-    if (error) throw error;
+    if (error) {
+    console.error(
+        "Failed to create inventory transaction:",
+        {
+            inventoryItemId,
+            transactionType,
+            fromStatusId,
+            toStatusId,
+            fromLocationId,
+            toLocationId,
+            performedBy,
+            saleId,
+            notes,
+            error,
+        }
+    );
+
+    throw error;
+}
 }
 
 export async function receiveStock({
@@ -878,4 +896,85 @@ export async function getInventoryItemByCode(itemCode) {
         location: locationResult.data,
         product: productResult.data,
     };
+}
+
+/**
+ * Returns sold inventory items back into available stock.
+ *
+ * SOLD -> IN_STOCK
+ *
+ * Used when a completed POS order is voided before fulfillment.
+ */
+export async function returnSoldInventoryItems(
+    items,
+    performedBy,
+    saleId
+) {
+    if (!performedBy) {
+        throw new Error(
+            "User performing the inventory transaction is required."
+        );
+    }
+
+    if (!saleId) {
+        throw new Error(
+            "Sale ID is required when returning sold inventory."
+        );
+    }
+
+    if (!items?.length) {
+        return [];
+    }
+
+    const soldStatus = await getInventoryStatus(
+        INVENTORY_ITEM_STATUSES.SOLD
+    );
+
+    const inStockStatus = await getInventoryStatus(
+        INVENTORY_ITEM_STATUSES.IN_STOCK
+    );
+
+    const ids = items.map((item) => item.id);
+
+    const { data, error } = await supabase
+        .from(INVENTORY_TABLE)
+        .update({
+            status_id: inStockStatus.id,
+            sold_at: null,
+        })
+        .in("id", ids)
+        .eq("status_id", soldStatus.id)
+        .select();
+
+    if (error) {
+        throw error;
+    }
+
+    if (data.length !== ids.length) {
+        throw new Error(
+            "One or more sold inventory items could not be returned to stock."
+        );
+    }
+
+    for (const item of items) {
+        await createInventoryTransaction({
+            inventoryItemId: item.id,
+
+            transactionType: "RETURN",
+
+            fromStatusId: soldStatus.id,
+            toStatusId: inStockStatus.id,
+
+            fromLocationId: item.location_id,
+            toLocationId: item.location_id,
+
+            performedBy,
+
+            saleId,
+
+            notes: "Returned to stock from voided order.",
+        });
+    }
+
+    return data;
 }
