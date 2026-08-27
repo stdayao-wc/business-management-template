@@ -15,9 +15,14 @@ import ReceiptModal from "@/components/pos/ReceiptModal";
 import { toast } from "sonner";
 import QRScanner from "@/components/scanner/QRScanner";
 
+import { getInventoryItemByCode } from "@/services/inventory";
+import { getTodayPaymentSummary } from "@/services/sales";
+
 import {
-    getInventoryItemByCode,
-} from "@/services/inventory";
+  getActiveCashierSession,
+  startCashierSession,
+  endCashierSession,
+} from "@/services/cashierSessions";
 
 export default function POSPage() {
   const [products, setProducts] = useState([]);
@@ -26,8 +31,19 @@ export default function POSPage() {
   const [receipt, setReceipt] = useState(null);
   const { user, profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [scannerOpen, setScannerOpen] =
-    useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
+
+  const [cashierSession, setCashierSession] = useState(null);
+
+  const [sessionLoading, setSessionLoading] = useState(true);
+
+  const [sessionUpdating, setSessionUpdating] = useState(false);
+
+  const [paymentSummary, setPaymentSummary] = useState({
+    cash: 0,
+    eWallet: 0,
+    onlineBanking: 0,
+  });
 
   function openCheckout() {
     setCheckoutOpen(true);
@@ -49,6 +65,12 @@ export default function POSPage() {
         shippingAddress: payment.shippingAddress,
 
         paymentMethod: payment.paymentMethod,
+
+        discountAmount: payment.discountAmount,
+        shippingFee: payment.shippingFee,
+
+        isDownpayment: payment.isDownpayment,
+
         amountReceived: payment.amountReceived,
         changeGiven: payment.changeGiven,
         notes: payment.notes,
@@ -63,7 +85,10 @@ export default function POSPage() {
       });
 
       clearCart();
+
       await loadProducts();
+      await loadPaymentSummary();
+
       closeCheckout();
 
       toast.success("Sale completed successfully.");
@@ -77,20 +102,25 @@ export default function POSPage() {
   }
 
   const {
-      cart,
-      totals,
+    cart,
+    totals,
 
-      addToCart,
-      addInventoryItemToCart,
-      increaseQuantity,
-      decreaseQuantity,
-      removeItem,
-      clearCart,
+    addToCart,
+    addInventoryItemToCart,
+    increaseQuantity,
+    decreaseQuantity,
+    removeItem,
+    clearCart,
   } = useCart();
 
   useEffect(() => {
     loadProducts();
+    loadPaymentSummary();
   }, []);
+
+  useEffect(() => {
+    loadCashierSession();
+  }, [user?.id]);
 
   async function loadProducts() {
     try {
@@ -103,88 +133,55 @@ export default function POSPage() {
 
   async function handleScan(itemCode) {
     try {
-        const inventoryItem =
-            await getInventoryItemByCode(
-                itemCode
-            );
+      const inventoryItem = await getInventoryItemByCode(itemCode);
 
-        if (!inventoryItem) {
-            toast.error(
-                `Item ${itemCode} was not found.`
-            );
+      if (!inventoryItem) {
+        toast.error(`Item ${itemCode} was not found.`);
 
-            return;
-        }
+        return;
+      }
 
-        if (
-            inventoryItem.status?.name !==
-            "IN_STOCK"
-        ) {
-            toast.error(
-                `Item ${itemCode} is not available.`
-            );
+      if (inventoryItem.status?.name !== "IN_STOCK") {
+        toast.error(`Item ${itemCode} is not available.`);
 
-            return;
-        }
+        return;
+      }
 
-        const product = products.find(
-            (product) =>
-                product.id ===
-                inventoryItem.product_id
-        );
+      const product = products.find(
+        (product) => product.id === inventoryItem.product_id,
+      );
 
-        if (!product) {
-            toast.error(
-                "The product for this inventory item could not be found."
-            );
+      if (!product) {
+        toast.error("The product for this inventory item could not be found.");
 
-            return;
-        }
+        return;
+      }
 
-        const existingCartItem =
-            cart.find(
-                (item) =>
-                    item.product.id ===
-                    product.id
-            );
+      const existingCartItem = cart.find(
+        (item) => item.product.id === product.id,
+      );
 
-        const alreadyInCart =
-            existingCartItem?.inventoryItems?.some(
-                (item) =>
-                    item.id ===
-                    inventoryItem.id
-            );
+      const alreadyInCart = existingCartItem?.inventoryItems?.some(
+        (item) => item.id === inventoryItem.id,
+      );
 
-        if (alreadyInCart) {
-            toast.error(
-                `Item ${itemCode} is already in the cart.`
-            );
+      if (alreadyInCart) {
+        toast.error(`Item ${itemCode} is already in the cart.`);
 
-            return;
-        }
+        return;
+      }
 
-        addInventoryItemToCart(
-            product,
-            inventoryItem
-        );
+      addInventoryItemToCart(product, inventoryItem);
 
-        setScannerOpen(false);
+      setScannerOpen(false);
 
-        toast.success(
-            `${product.name} added to cart.`
-        );
+      toast.success(`${product.name} added to cart.`);
     } catch (error) {
-        console.error(
-            "QR scan failed:",
-            error
-        );
+      console.error("QR scan failed:", error);
 
-        toast.error(
-            error?.message ||
-                "Unable to process QR code."
-        );
+      toast.error(error?.message || "Unable to process QR code.");
     }
-}
+  }
 
   const filteredProducts = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
@@ -202,63 +199,187 @@ export default function POSPage() {
     });
   }, [products, searchTerm]);
 
+  async function loadPaymentSummary() {
+    try {
+      const data = await getTodayPaymentSummary();
+
+      setPaymentSummary(data);
+    } catch (error) {
+      console.error("Failed to load payment summary:", error);
+    }
+  }
+
+  async function loadCashierSession() {
+    if (!user?.id) {
+      return;
+    }
+
+    try {
+      setSessionLoading(true);
+
+      const session = await getActiveCashierSession(user.id);
+
+      setCashierSession(session);
+    } catch (error) {
+      console.error("Failed to load cashier session:", error);
+
+      toast.error(error?.message || "Unable to load cashier session.");
+    } finally {
+      setSessionLoading(false);
+    }
+  }
+
+  async function handleSessionToggle() {
+    if (!user?.id || sessionUpdating) {
+      return;
+    }
+
+    try {
+      setSessionUpdating(true);
+
+      if (cashierSession) {
+        await endCashierSession(cashierSession.id, user.id);
+
+        setCashierSession(null);
+
+        toast.success("Cashier session ended.");
+      } else {
+        const session = await startCashierSession(user.id);
+
+        setCashierSession(session);
+
+        toast.success("Cashier session started.");
+      }
+    } catch (error) {
+      console.error("Failed to update cashier session:", error);
+
+      toast.error(error?.message || "Unable to update cashier session.");
+    } finally {
+      setSessionUpdating(false);
+    }
+  }
+
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-      <div className="space-y-4 lg:col-span-8">
-        <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-          <ProductSearch
-              value={searchTerm}
-              onChange={setSearchTerm}
+    <div className="space-y-6">
+      {/* Daily Payment Summary */}
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="rounded-xl border bg-white p-5">
+          <p className="text-sm text-gray-500">Cash</p>
+
+          <p className="mt-2 text-2xl font-semibold">
+            ₱{paymentSummary.cash.toFixed(2)}
+          </p>
+        </div>
+
+        <div className="rounded-xl border bg-white p-5">
+          <p className="text-sm text-gray-500">E-Wallet</p>
+
+          <p className="mt-2 text-2xl font-semibold">
+            ₱{paymentSummary.eWallet.toFixed(2)}
+          </p>
+        </div>
+
+        <div className="rounded-xl border bg-white p-5">
+          <p className="text-sm text-gray-500">Online Banking</p>
+
+          <p className="mt-2 text-2xl font-semibold">
+            ₱{paymentSummary.onlineBanking.toFixed(2)}
+          </p>
+        </div>
+      </div>
+
+      {/* POS */}
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12"></div>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <div className="space-y-4 lg:col-span-8">
+          <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+            <div className="space-y-4 lg:col-span-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-bold">Point of Sale</h1>
+
+                  <p className="text-sm text-gray-500">
+                    {cashierSession
+                      ? `${profile?.first_name || "Cashier"} is clocked in.`
+                      : "Clock in to begin selling."}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSessionToggle}
+                  disabled={sessionLoading || sessionUpdating}
+                  className={
+                    cashierSession
+                      ? "rounded-xl bg-red-600 px-5 py-3 font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      : "rounded-xl bg-green-600 px-5 py-3 font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  }
+                >
+                  {sessionLoading
+                    ? "Loading..."
+                    : sessionUpdating
+                      ? "Updating..."
+                      : cashierSession
+                        ? "Time Out"
+                        : "Time In"}
+                </button>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+                <ProductSearch value={searchTerm} onChange={setSearchTerm} />
+
+                <button
+                  type="button"
+                  onClick={() => setScannerOpen(true)}
+                  className="rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
+                >
+                  Scan QR
+                </button>
+              </div>
+
+              <ProductGrid
+                products={filteredProducts}
+                loading={loading}
+                onAddToCart={addToCart}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-4">
+          <CartPanel
+            cart={cart}
+            totals={totals}
+            onIncreaseQuantity={increaseQuantity}
+            onDecreaseQuantity={decreaseQuantity}
+            onRemoveItem={removeItem}
+            onCheckout={openCheckout}
+            checkoutDisabled={
+              !cashierSession || sessionLoading || sessionUpdating
+            }
           />
+        </div>
 
-          <button
-              type="button"
-              onClick={() =>
-                  setScannerOpen(true)
-              }
-              className="rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
-          >
-              Scan QR
-          </button>
-      </div>
-
-        <ProductGrid
-          products={filteredProducts}
-          loading={loading}
-          onAddToCart={addToCart}
-        />
-      </div>
-
-      <div className="lg:col-span-4">
-        <CartPanel
-          cart={cart}
+        <CheckoutDialog
+          open={checkoutOpen}
           totals={totals}
-          onIncreaseQuantity={increaseQuantity}
-          onDecreaseQuantity={decreaseQuantity}
-          onRemoveItem={removeItem}
-          onCheckout={openCheckout}
+          onClose={closeCheckout}
+          onConfirm={handleCheckout}
+        />
+
+        <ReceiptModal
+          open={receipt !== null}
+          receipt={receipt}
+          onClose={() => setReceipt(null)}
+        />
+        <QRScanner
+          open={scannerOpen}
+          onScan={handleScan}
+          onClose={() => setScannerOpen(false)}
         />
       </div>
-
-      <CheckoutDialog
-        open={checkoutOpen}
-        totals={totals}
-        onClose={closeCheckout}
-        onConfirm={handleCheckout}
-      />
-
-      <ReceiptModal
-        open={receipt !== null}
-        receipt={receipt}
-        onClose={() => setReceipt(null)}
-      />
-      <QRScanner
-        open={scannerOpen}
-        onScan={handleScan}
-        onClose={() =>
-            setScannerOpen(false)
-        }
-    />
     </div>
   );
 }

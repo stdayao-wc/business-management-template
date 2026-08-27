@@ -8,6 +8,7 @@ import {
     markOrderPickedUp,
     markOrderShipped,
     markOrderDelivered,
+    voidOrder,
 } from "@/services/orders";
 
 import OrdersTable from "@/components/orders/OrdersTable";
@@ -15,7 +16,10 @@ import OrderDetailsModal from "@/components/orders/OrderDetailsModal";
 
 import { toast } from "sonner";
 
+import { useAuth } from "@/context/AuthContext";
+
 export default function OrdersPage() {
+    const { user } = useAuth();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -152,6 +156,43 @@ export default function OrdersPage() {
         }
     }
 
+    async function handleVoidOrder(orderId) {
+        if (updatingOrderId) {
+            return;
+        }
+
+        try {
+            setUpdatingOrderId(orderId);
+
+            await voidOrder(
+                orderId,
+                user.id
+            );
+
+            await loadOrders(page);
+
+            if (selectedOrder?.id === orderId) {
+                setSelectedOrder(null);
+            }
+
+            toast.success(
+                "Order voided successfully."
+            );
+        } catch (error) {
+            console.error(
+                "Failed to void order:",
+                error
+            );
+
+            toast.error(
+                error?.message ||
+                    "Unable to void order."
+            );
+        } finally {
+            setUpdatingOrderId(null);
+        }
+    }
+
     return (
         <div className="space-y-8">
             <div>
@@ -202,6 +243,8 @@ export default function OrdersPage() {
                         "delivered"
                     )
                 }
+
+                onVoid={handleVoidOrder}
             />
 
             <OrderDetailsModal

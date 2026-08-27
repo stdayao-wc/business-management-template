@@ -6,23 +6,46 @@ import {
     getAvailableInventoryItems,
     getInventoryItemByCode,
     sellInventoryItems,
-} from "./inventory";
+    reserveInventoryItems,
+} from "@/services/inventory";
 
-export function calculateTotals(cart) {
+export function calculateTotals(
+    cart,
+    {
+        discountAmount = 0,
+        shippingFee = 0,
+    } = {}
+) {
     let subtotal = 0;
 
     for (const item of cart) {
-        subtotal += item.product.selling_price * item.quantity;
+        subtotal +=
+            Number(item.product.selling_price) *
+            item.quantity;
     }
+
+    const discount =
+        Number(discountAmount) || 0;
+
+    const shipping =
+        Number(shippingFee) || 0;
+
+    const total = Math.max(
+        subtotal - discount + shipping,
+        0
+    );
 
     return {
         subtotal,
-        total: subtotal,
+        discountAmount: discount,
+        shippingFee: shipping,
+        total,
     };
 }
 
 async function validateExactInventoryItems(item) {
-    const exactItems = item.inventoryItems ?? [];
+    const exactItems =
+        item.inventoryItems ?? [];
 
     if (!exactItems.length) {
         return null;
@@ -55,9 +78,6 @@ async function validateExactInventoryItems(item) {
     return null;
 }
 
-/**
- * Validate cart before checkout.
- */
 export async function validateCart(cart) {
     if (!cart.length) {
         return {
@@ -75,7 +95,9 @@ export async function validateCart(cart) {
         }
 
         const exactValidation =
-            await validateExactInventoryItems(item);
+            await validateExactInventoryItems(
+                item
+            );
 
         if (exactValidation) {
             return exactValidation;
@@ -84,10 +106,12 @@ export async function validateCart(cart) {
         const exactItems =
             item.inventoryItems ?? [];
 
-        const additionalQuantity = Math.max(
-            0,
-            item.quantity - exactItems.length
-        );
+        const additionalQuantity =
+            Math.max(
+                0,
+                item.quantity -
+                    exactItems.length
+            );
 
         if (additionalQuantity > 0) {
             const availableItems =
@@ -117,31 +141,28 @@ export async function validateCart(cart) {
     };
 }
 
-/**
- * Generate a receipt number.
- *
- * MVP implementation.
- * Later this can become a PostgreSQL function.
- */
 function generateReceiptNumber() {
     const now = new Date();
 
     const date =
         now.getFullYear().toString() +
-        String(now.getMonth() + 1).padStart(2, "0") +
-        String(now.getDate()).padStart(2, "0");
+        String(
+            now.getMonth() + 1
+        ).padStart(2, "0") +
+        String(
+            now.getDate()
+        ).padStart(2, "0");
 
     const random =
-        Math.floor(Math.random() * 999999)
+        Math.floor(
+            Math.random() * 999999
+        )
             .toString()
             .padStart(6, "0");
 
     return `POS-${date}-${random}`;
 }
 
-/**
- * Create the sale record.
- */
 async function createSale({
     cashierId,
     totals,
@@ -155,9 +176,15 @@ async function createSale({
     amountReceived,
     changeGiven,
     notes,
+
+    isDownpayment,
+    downpaymentAmount,
 }) {
     const fulfillmentStatus =
-        getInitialFulfillmentStatus(shippingMethod);
+        getInitialFulfillmentStatus(
+            shippingMethod,
+            isDownpayment
+        );
 
     const normalizedCustomerName =
         customerName.trim();
@@ -168,28 +195,64 @@ async function createSale({
     const normalizedShippingAddress =
         shippingAddress?.trim() || null;
 
-    const { data, error } = await supabase
+    const {
+        data,
+        error,
+    } = await supabase
         .from("sales")
         .insert({
-            receipt_number: generateReceiptNumber(),
-            cashier_id: cashierId,
+            receipt_number:
+                generateReceiptNumber(),
 
-            subtotal: totals.subtotal,
-            total: totals.total,
+            cashier_id:
+                cashierId,
 
-            payment_method: paymentMethod,
-            amount_received: amountReceived,
-            change_given: changeGiven,
+            subtotal:
+                totals.subtotal,
+
+            discount_amount:
+                totals.discountAmount,
+
+            shipping_fee:
+                totals.shippingFee,
+
+            total:
+                totals.total,
+
+            payment_method:
+                paymentMethod,
+
+            amount_received:
+                amountReceived,
+
+            change_given:
+                changeGiven,
+
             notes,
 
-            customer_name: normalizedCustomerName,
-            customer_phone: normalizedCustomerPhone,
+            customer_name:
+                normalizedCustomerName,
+
+            customer_phone:
+                normalizedCustomerPhone,
+
             shipping_address:
-                shippingMethod === "PICKUP"
+                shippingMethod ===
+                "PICKUP"
                     ? null
                     : normalizedShippingAddress,
-            shipping_method: shippingMethod,
-            fulfillment_status: fulfillmentStatus,
+
+            shipping_method:
+                shippingMethod,
+
+            fulfillment_status:
+                fulfillmentStatus,
+
+            is_downpayment:
+                isDownpayment,
+
+            downpayment_amount:
+                downpaymentAmount,
         })
         .select()
         .single();
@@ -201,209 +264,44 @@ async function createSale({
     return data;
 }
 
-/**
- * Create sale item records.
- */
-async function createSaleItems(saleId, cart) {
-    const rows = cart.map((item) => ({
-        sale_id: saleId,
-        product_id: item.product.id,
-        quantity: item.quantity,
-        unit_price: item.product.selling_price,
-        cost_price: item.product.cost_price,
-        line_total:
-            item.product.selling_price * item.quantity,
-    }));
+async function createSaleItems(
+    saleId,
+    cart
+) {
+    const rows = cart.map(
+        (item) => ({
+            sale_id:
+                saleId,
 
-    const { error } = await supabase
+            product_id:
+                item.product.id,
+
+            quantity:
+                item.quantity,
+
+            unit_price:
+                item.product
+                    .selling_price,
+
+            cost_price:
+                item.product
+                    .cost_price,
+
+            line_total:
+                item.product
+                    .selling_price *
+                item.quantity,
+        })
+    );
+
+    const {
+        error,
+    } = await supabase
         .from("sale_items")
         .insert(rows);
 
     if (error) {
         throw error;
-    }
-}
-
-/**
- * Checkout.
- *
- * Inventory integration will be added next.
- */
-export async function checkout({
-    cashierId,
-    cart,
-
-    shippingMethod,
-    customerName,
-    customerPhone,
-    shippingAddress,
-
-    paymentMethod = "Cash",
-    amountReceived,
-    changeGiven,
-    notes = "",
-}) {
-
-    validateShippingDetails({
-        shippingMethod,
-        customerName,
-        customerPhone,
-        shippingAddress,
-    });
-
-    const validation = await validateCart(cart);
-
-    if (!validation.valid) {
-        throw new Error(validation.message);
-    }
-
-    const totals = calculateTotals(cart);
-
-    const sale = await createSale({
-        cashierId,
-        totals,
-
-        shippingMethod,
-        customerName,
-        customerPhone,
-        shippingAddress,
-
-        paymentMethod,
-        amountReceived,
-        changeGiven,
-        notes,
-    });
-
-    await createSaleItems(sale.id, cart);
-
-    for (const item of cart) {
-        const exactItems =
-            item.inventoryItems ?? [];
-
-        const additionalQuantity = Math.max(
-            0,
-            item.quantity - exactItems.length
-        );
-
-        let additionalItems = [];
-
-        if (additionalQuantity > 0) {
-            additionalItems =
-                await getAvailableInventoryItems(
-                    item.product.id,
-                    additionalQuantity,
-                    exactItems.map(
-                        (inventoryItem) =>
-                            inventoryItem.id
-                    )
-                );
-        }
-
-        const inventoryItems = [
-            ...exactItems,
-            ...additionalItems,
-        ];
-
-        if (
-            inventoryItems.length !==
-            item.quantity
-        ) {
-            throw new Error(
-                `Unable to allocate inventory for ${item.product.name}.`
-            );
-        }
-
-        await sellInventoryItems(
-            inventoryItems,
-            cashierId,
-            sale.id
-        );
-    }
-
-    return sale;
-}
-
-/**
- * Returns products prepared for the POS.
- *
- * The POS should display all active products,
- * including those that are currently out of stock.
- */
-export async function getPOSProducts() {
-    const products = await getProducts();
-
-    const stockMap = await getInventoryCounts(
-        products.map((product) => product.id)
-    );
-
-    return products.map((product) => {
-        const availableStock =
-            stockMap[product.id] ?? 0;
-
-        return {
-            ...product,
-
-            available_stock: availableStock,
-
-            is_out_of_stock:
-                availableStock === 0,
-        };
-    });
-}
-
-function getInitialFulfillmentStatus(shippingMethod) {
-    if (shippingMethod === "PICKUP") {
-        return "READY_FOR_PICKUP";
-    }
-
-    return "PENDING";
-}
-
-function isValidPhilippinePhone(phone) {
-    const normalized = phone
-        .trim()
-        .replace(/[\s()-]/g, "");
-
-    return /^(09\d{9}|639\d{9}|\+639\d{9})$/.test(
-        normalized
-    );
-}
-
-function validateShippingDetails({
-    shippingMethod,
-    customerName,
-    customerPhone,
-    shippingAddress,
-}) {
-    if (!shippingMethod) {
-        throw new Error("Shipping method is required.");
-    }
-
-    if (!["PICKUP", "LBC", "J&T"].includes(shippingMethod)) {
-        throw new Error("Invalid shipping method.");
-    }
-
-    if (!customerName?.trim()) {
-        throw new Error("Customer name is required.");
-    }
-
-    if (!customerPhone?.trim()) {
-        throw new Error("Customer number is required.");
-    }
-
-    if (!isValidPhilippinePhone(customerPhone)) {
-        throw new Error(
-            "Please enter a valid Philippine phone number."
-        );
-    }
-
-    if (
-        shippingMethod !== "PICKUP" &&
-        !shippingAddress?.trim()
-    ) {
-        throw new Error(
-            "Shipping address is required for delivery."
-        );
     }
 }
 
@@ -413,15 +311,17 @@ async function resolveInventoryItemsForCartItem(
     const exactItems =
         item.inventoryItems ?? [];
 
-    const exactIds = new Set(
-        exactItems.map(
-            (inventoryItem) =>
-                inventoryItem.id
-        )
-    );
+    const exactIds =
+        new Set(
+            exactItems.map(
+                (inventoryItem) =>
+                    inventoryItem.id
+            )
+        );
 
     if (
-        exactItems.length >= item.quantity
+        exactItems.length >=
+        item.quantity
     ) {
         return exactItems.slice(
             0,
@@ -436,7 +336,8 @@ async function resolveInventoryItemsForCartItem(
     const availableItems =
         await getAvailableInventoryItems(
             item.product.id,
-            additionalQuantity
+            additionalQuantity,
+            [...exactIds]
         );
 
     const additionalItems =
@@ -463,4 +364,354 @@ async function resolveInventoryItemsForCartItem(
             additionalQuantity
         ),
     ];
+}
+
+export async function checkout({
+    cashierId,
+    cart,
+
+    shippingMethod,
+    customerName,
+    customerPhone,
+    shippingAddress,
+
+    paymentMethod = "Cash",
+
+    discountAmount = 0,
+    shippingFee = 0,
+
+    amountReceived,
+    changeGiven,
+    notes = "",
+
+    isDownpayment = false,
+}) {
+    validateShippingDetails({
+        shippingMethod,
+        customerName,
+        customerPhone,
+        shippingAddress,
+    });
+
+    const validation =
+        await validateCart(
+            cart
+        );
+
+    if (!validation.valid) {
+        throw new Error(
+            validation.message
+        );
+    }
+
+    const normalizedDiscountAmount =
+        Number(discountAmount);
+
+    if (
+        !Number.isFinite(
+            normalizedDiscountAmount
+        ) ||
+        normalizedDiscountAmount < 0
+    ) {
+        throw new Error(
+            "Discount amount must be a valid non-negative amount."
+        );
+    }
+
+    const normalizedShippingFee =
+        Number(shippingFee);
+
+    if (
+        !Number.isFinite(
+            normalizedShippingFee
+        ) ||
+        normalizedShippingFee < 0
+    ) {
+        throw new Error(
+            "Shipping fee must be a valid non-negative amount."
+        );
+    }
+
+    if (
+        shippingMethod === "PICKUP" &&
+        normalizedShippingFee !== 0
+    ) {
+        throw new Error(
+            "Shipping fee must be zero for pickup orders."
+        );
+    }
+
+    const baseTotals =
+        calculateTotals(cart);
+
+    if (
+        normalizedDiscountAmount >
+        baseTotals.subtotal
+    ) {
+        throw new Error(
+            "Discount cannot exceed the subtotal."
+        );
+    }
+
+    const totals =
+        calculateTotals(
+            cart,
+            {
+                discountAmount:
+                    normalizedDiscountAmount,
+                shippingFee:
+                    normalizedShippingFee,
+            }
+        );
+
+    const normalizedAmountReceived =
+        Number(
+            amountReceived
+        );
+
+    if (
+        !Number.isFinite(
+            normalizedAmountReceived
+        ) ||
+        normalizedAmountReceived < 0
+    ) {
+        throw new Error(
+            "Amount received must be a valid amount."
+        );
+    }
+
+    const normalizedChangeGiven =
+        isDownpayment
+            ? 0
+            : Math.max(
+                normalizedAmountReceived -
+                    totals.total,
+                0
+            );
+
+    if (
+        isDownpayment &&
+        normalizedAmountReceived <=
+            0
+    ) {
+        throw new Error(
+            "Downpayment amount must be greater than zero."
+        );
+    }
+
+    if (
+        isDownpayment &&
+        normalizedAmountReceived >=
+            totals.total
+    ) {
+        throw new Error(
+            "A downpayment must be less than the total sale amount."
+        );
+    }
+
+    if (
+        !isDownpayment &&
+        normalizedAmountReceived <
+            totals.total
+    ) {
+        throw new Error(
+            "Amount received is less than the sale total."
+        );
+    }
+
+    const normalizedDownpaymentAmount =
+        isDownpayment
+            ? normalizedAmountReceived
+            : 0;
+
+    const sale =
+        await createSale({
+            cashierId,
+            totals,
+
+            shippingMethod,
+            customerName,
+            customerPhone,
+            shippingAddress,
+
+            paymentMethod,
+            amountReceived:
+                normalizedAmountReceived,
+            changeGiven:
+                normalizedChangeGiven,
+            notes,
+
+            isDownpayment,
+            downpaymentAmount:
+                normalizedDownpaymentAmount,
+        });
+
+    try {
+        await createSaleItems(
+            sale.id,
+            cart
+        );
+
+        for (
+            const item of cart
+        ) {
+            const inventoryItems =
+                await resolveInventoryItemsForCartItem(
+                    item
+                );
+
+        if (isDownpayment) {
+            await reserveInventoryItems(
+                inventoryItems,
+                cashierId,
+                sale.id
+            );
+        } else {
+            await sellInventoryItems(
+                inventoryItems,
+                cashierId,
+                sale.id
+            );
+        }
+        }
+    } catch (error) {
+        console.error(
+            "Checkout inventory processing failed:",
+            error
+        );
+
+        throw error;
+    }
+
+    return sale;
+}
+
+export async function getPOSProducts() {
+    const products =
+        await getProducts();
+
+    const stockMap =
+        await getInventoryCounts(
+            products.map(
+                (product) =>
+                    product.id
+            )
+        );
+
+    return products.map(
+        (product) => {
+            const availableStock =
+                stockMap[
+                    product.id
+                ] ?? 0;
+
+            return {
+                ...product,
+
+                available_stock:
+                    availableStock,
+
+                is_out_of_stock:
+                    availableStock ===
+                    0,
+            };
+        }
+    );
+}
+
+function getInitialFulfillmentStatus(
+    shippingMethod,
+    isDownpayment
+) {
+    if (isDownpayment) {
+        return "PENDING";
+    }
+
+    if (
+        shippingMethod ===
+        "PICKUP"
+    ) {
+        return "READY_FOR_PICKUP";
+    }
+
+    return "PENDING";
+}
+
+function isValidPhilippinePhone(
+    phone
+) {
+    const normalized =
+        phone
+            .trim()
+            .replace(
+                /[\s()-]/g,
+                ""
+            );
+
+    return /^(09\d{9}|639\d{9}|\+639\d{9})$/.test(
+        normalized
+    );
+}
+
+function validateShippingDetails({
+    shippingMethod,
+    customerName,
+    customerPhone,
+    shippingAddress,
+}) {
+    if (!shippingMethod) {
+        throw new Error(
+            "Shipping method is required."
+        );
+    }
+
+    if (
+        ![
+            "PICKUP",
+            "LBC",
+            "J&T",
+        ].includes(
+            shippingMethod
+        )
+    ) {
+        throw new Error(
+            "Invalid shipping method."
+        );
+    }
+
+    if (
+        !customerName?.trim()
+    ) {
+        throw new Error(
+            "Customer name is required."
+        );
+    }
+
+    if (
+        !customerPhone?.trim()
+    ) {
+        throw new Error(
+            "Customer number is required."
+        );
+    }
+
+    if (
+        !isValidPhilippinePhone(
+            customerPhone
+        )
+    ) {
+        throw new Error(
+            "Please enter a valid Philippine phone number."
+        );
+    }
+
+    if (
+        shippingMethod !==
+            "PICKUP" &&
+        !shippingAddress?.trim()
+    ) {
+        throw new Error(
+            "Shipping address is required for delivery."
+        );
+    }
 }
