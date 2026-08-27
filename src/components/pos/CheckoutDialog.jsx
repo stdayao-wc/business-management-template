@@ -39,8 +39,10 @@ export default function CheckoutDialog({ open, totals, onClose, onConfirm }) {
 
   const normalizedAmountReceived = Number(amountReceived);
 
+  const isCashPayment = paymentMethod === "Cash";
+
   const changeGiven = useMemo(() => {
-    if (paymentType === "DOWNPAYMENT") {
+    if (paymentType === "DOWNPAYMENT" || !isCashPayment) {
       return 0;
     }
 
@@ -49,7 +51,7 @@ export default function CheckoutDialog({ open, totals, onClose, onConfirm }) {
     }
 
     return Math.max(normalizedAmountReceived - checkoutTotal, 0);
-  }, [paymentType, normalizedAmountReceived, checkoutTotal]);
+  }, [paymentType, normalizedAmountReceived, checkoutTotal, isCashPayment]);
 
   const remainingBalance = useMemo(() => {
     if (paymentType !== "DOWNPAYMENT") {
@@ -144,6 +146,18 @@ export default function CheckoutDialog({ open, totals, onClose, onConfirm }) {
     setNotes("");
   }, [open, totals.total]);
 
+  /*
+   * Non-cash payments are treated as exact payment.
+   *
+   * For downpayments, the cashier still enters
+   * the downpayment amount regardless of method.
+   */
+  useEffect(() => {
+    if (!isCashPayment && paymentType === "FULL_PAYMENT") {
+      setAmountReceived(checkoutTotal);
+    }
+  }, [isCashPayment, paymentType, checkoutTotal]);
+
   return (
     <Modal open={open} title="Checkout" onClose={onClose}>
       <div className="space-y-6">
@@ -196,7 +210,9 @@ export default function CheckoutDialog({ open, totals, onClose, onConfirm }) {
                 setPaymentType(type);
 
                 if (type === "FULL_PAYMENT") {
-                  setAmountReceived(checkoutTotal);
+                  setAmountReceived(
+                    isCashPayment ? checkoutTotal : checkoutTotal,
+                  );
                 } else {
                   setAmountReceived(0);
                 }
@@ -219,11 +235,27 @@ export default function CheckoutDialog({ open, totals, onClose, onConfirm }) {
 
             <select
               value={paymentMethod}
-              onChange={(e) => setPaymentMethod(e.target.value)}
+              onChange={(e) => {
+                const method = e.target.value;
+
+                setPaymentMethod(method);
+
+                /*
+                 * E-wallet and online banking
+                 * are treated as exact payment.
+                 */
+                if (method !== "Cash" && paymentType === "FULL_PAYMENT") {
+                  setAmountReceived(checkoutTotal);
+                }
+              }}
               disabled={processing}
               className="w-full rounded-lg border px-3 py-2"
             >
               <option value="Cash">Cash</option>
+
+              <option value="E-Wallet">E-Wallet</option>
+
+              <option value="Online Banking">Online Banking</option>
             </select>
           </div>
 
@@ -337,13 +369,15 @@ export default function CheckoutDialog({ open, totals, onClose, onConfirm }) {
             </div>
           )}
 
-          {/* Amount Received */}
+          {/* Amount Received / Payment Amount */}
 
           <div>
             <label className="mb-1 block text-sm font-medium">
               {paymentType === "DOWNPAYMENT"
                 ? "Downpayment Amount"
-                : "Amount Received"}
+                : isCashPayment
+                  ? "Amount Received"
+                  : "Payment Amount"}
             </label>
 
             <input
@@ -352,7 +386,9 @@ export default function CheckoutDialog({ open, totals, onClose, onConfirm }) {
               step="0.01"
               value={amountReceived}
               onChange={(e) => setAmountReceived(e.target.value)}
-              disabled={processing}
+              disabled={
+                processing || (!isCashPayment && paymentType === "FULL_PAYMENT")
+              }
               className="w-full rounded-lg border px-3 py-2"
             />
           </div>
@@ -375,7 +411,7 @@ export default function CheckoutDialog({ open, totals, onClose, onConfirm }) {
 
           {/* Change */}
 
-          {paymentType === "FULL_PAYMENT" && (
+          {paymentType === "FULL_PAYMENT" && isCashPayment && (
             <div>
               <label className="mb-1 block text-sm font-medium">Change</label>
 
