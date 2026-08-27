@@ -249,7 +249,7 @@ export default function POSPage() {
 
                 <p className="text-sm text-gray-500">
                   {cashierSession
-                    ? "You are currently clocked in."
+                    ? `${profile?.first_name || "Cashier"} is clocked in.`
                     : "Clock in to begin selling."}
                 </p>
               </div>
@@ -292,22 +292,7 @@ export default function POSPage() {
               onAddToCart={addToCart}
             />
           </div>
-          <ProductSearch value={searchTerm} onChange={setSearchTerm} />
-
-          <button
-            type="button"
-            onClick={() => setScannerOpen(true)}
-            className="rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
-          >
-            Scan QR
-          </button>
         </div>
-
-        <ProductGrid
-          products={filteredProducts}
-          loading={loading}
-          onAddToCart={addToCart}
-        />
       </div>
 
       <div className="lg:col-span-4">
@@ -318,6 +303,9 @@ export default function POSPage() {
           onDecreaseQuantity={decreaseQuantity}
           onRemoveItem={removeItem}
           onCheckout={openCheckout}
+          checkoutDisabled={
+            !cashierSession || sessionLoading || sessionUpdating
+          }
         />
       </div>
 

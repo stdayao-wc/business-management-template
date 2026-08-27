@@ -2,12 +2,13 @@ import CartItem from "./CartItem";
 import CartSummary from "./CartSummary";
 
 export default function CartPanel({
-  cart = [],
+  cart,
   totals,
   onIncreaseQuantity,
   onDecreaseQuantity,
   onRemoveItem,
   onCheckout,
+  checkoutDisabled,
 }) {
   return (
     <div className="rounded-xl bg-white p-6 shadow-sm">
@@ -29,7 +30,12 @@ export default function CartPanel({
             ))}
           </div>
 
-          <CartSummary cart={cart} totals={totals} onCheckout={onCheckout} />
+          <CartSummary
+            cart={cart}
+            totals={totals}
+            onCheckout={onCheckout}
+            checkoutDisabled={checkoutDisabled}
+          />
         </>
       )}
     </div>
