@@ -271,6 +271,7 @@ export async function createExpense({
 }
 
 export const FINANCE_PERIODS = {
+    DAY: "day",
     WEEK: "week",
     MONTH: "month",
     YEAR: "year",
@@ -278,6 +279,17 @@ export const FINANCE_PERIODS = {
 
 export function getFinanceDateRange(period) {
     const now = new Date();
+
+    if (period === FINANCE_PERIODS.DAY) {
+        const start = new Date(now);
+
+        start.setHours(0, 0, 0, 0);
+
+        return {
+            startDate: start.toISOString(),
+            endDate: now.toISOString(),
+        };
+    }
 
     if (period === FINANCE_PERIODS.WEEK) {
         const start = new Date(now);
