@@ -5,7 +5,6 @@ import {
 import {
     receiveStock,
     shipStock,
-    damageStock,
 } from "@/services/inventory";
 
 function createTransaction(config) {
@@ -39,6 +38,5 @@ export const TRANSACTION_CONFIG = {
             action: "Record Damage",
             loading: "Recording...",
             variant: "danger",
-            service: damageStock,
         }),
 };
