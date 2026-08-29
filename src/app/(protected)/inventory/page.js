@@ -153,7 +153,7 @@ export default function InventoryPage() {
 
             toast.error(
                 error?.message ||
-                    "Unable to find inventory item."
+                "Unable to find inventory item."
             );
         }
     }
@@ -169,22 +169,22 @@ export default function InventoryPage() {
                     Inventory
                 </h1>
 
-<div className="grid gap-3 md:grid-cols-[1fr_auto]">
-    <ProductSearch
-        value={searchTerm}
-        onChange={setSearchTerm}
-    />
+                <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+                    <ProductSearch
+                        value={searchTerm}
+                        onChange={setSearchTerm}
+                    />
 
-    <button
-        type="button"
-        onClick={() =>
-            setScannerOpen(true)
-        }
-        className="rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
-    >
-        Scan QR
-    </button>
-</div>
+                    <button
+                        type="button"
+                        onClick={() =>
+                            setScannerOpen(true)
+                        }
+                        className="rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
+                    >
+                        Scan QR
+                    </button>
+                </div>
 
             </div>
             {/* Product Grid */}
@@ -201,19 +201,21 @@ export default function InventoryPage() {
                     />
                 ))}
             </ItemGrid>
-            <InventoryTransactionDialog
-                open={isTransactionDialogOpen}
-                product={selectedProduct}
-                type={transactionType}
-                onClose={handleCloseTransactionDialog}
-                onSuccess={loadInventory}
-            />
-            <InventoryItemsModal
-                open={isItemsModalOpen}
-                product={selectedInventoryProduct}
-                onClose={handleCloseItemsModal}
-            />
-            <QRScanner
+<InventoryTransactionDialog
+    open={isTransactionDialogOpen}
+    product={selectedProduct}
+    type={transactionType}
+    onClose={handleCloseTransactionDialog}
+    onSuccess={loadInventory}
+/>
+
+<InventoryItemsModal
+    open={isItemsModalOpen}
+    product={selectedInventoryProduct}
+    onClose={handleCloseItemsModal}
+/>
+
+<QRScanner
     open={scannerOpen}
     onScan={handleScan}
     onClose={() =>
@@ -227,6 +229,9 @@ export default function InventoryPage() {
     onClose={() => {
         setDetailsOpen(false);
         setScannedItem(null);
+    }}
+    onSuccess={async () => {
+        await loadInventory();
     }}
 />
         </div>
