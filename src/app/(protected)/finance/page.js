@@ -18,6 +18,7 @@ import FinancePeriodFilter from "@/components/finance/FinancePeriodFilter";
 import FinanceSummary from "@/components/finance/FinanceSummary";
 import FinanceTransactionTable from "@/components/finance/FinanceTransactionTable";
 import DeductableModal from "@/components/finance/DeductableModal";
+import DailySalesSummaryModal from "@/components/finance/DailySalesSummaryModal";
 
 export default function FinancePage() {
     const [period, setPeriod] = useState(
@@ -44,6 +45,11 @@ export default function FinancePage() {
 
     const [deductableModalOpen, setDeductableModalOpen] =
         useState(false);
+
+    const [
+        dailySalesSummaryOpen,
+        setDailySalesSummaryOpen,
+    ] = useState(false);
 
     const { user } = useAuth();
 
@@ -133,11 +139,14 @@ export default function FinancePage() {
 
     return (
         <div className="space-y-8">
-            <FinanceHeader
-                onAddDeductable={() =>
-                    setDeductableModalOpen(true)
-                }
-            />
+        <FinanceHeader
+            onAddDeductable={() =>
+                setDeductableModalOpen(true)
+            }
+            onViewDailySalesSummary={() =>
+                setDailySalesSummaryOpen(true)
+            }
+        />
 
             <FinancePeriodFilter
                 period={period}
@@ -165,6 +174,14 @@ export default function FinancePage() {
                 }
                 onSuccess={handleDeductableSuccess}
             />
+            <DailySalesSummaryModal
+                open={dailySalesSummaryOpen}
+                onClose={() =>
+                    setDailySalesSummaryOpen(false)
+                }
+            />
+
+            
         </div>
     );
 }
