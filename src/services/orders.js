@@ -133,10 +133,8 @@ function validateFulfillmentTransition(
         shippingMethod === "J&T"
     ) {
         const valid =
-            (currentStatus === "PENDING" &&
-                nextStatus === "SHIPPED") ||
-            (currentStatus === "SHIPPED" &&
-                nextStatus === "DELIVERED");
+            currentStatus === "PENDING" &&
+            nextStatus === "SHIPPED";
 
         if (!valid) {
             throw new Error(
@@ -283,16 +281,16 @@ export async function markOrderShipped(
     );
 }
 
-export async function markOrderDelivered(
-    orderId,
-    performedBy
-) {
-    return updateFulfillmentStatus(
-        orderId,
-        FULFILLMENT_STATUSES.DELIVERED,
-        performedBy
-    );
-}
+// export async function markOrderDelivered(
+//     orderId,
+//     performedBy
+// ) {
+//     return updateFulfillmentStatus(
+//         orderId,
+//         FULFILLMENT_STATUSES.DELIVERED,
+//         performedBy
+//     );
+// }
 
 export { FULFILLMENT_STATUSES };
 

@@ -86,15 +86,15 @@ function getAction(order) {
     };
   }
 
-  if (
-    order.shipping_method !== "PICKUP" &&
-    order.fulfillment_status === "SHIPPED"
-  ) {
-    return {
-      label: "Mark Delivered",
-      action: "delivered",
-    };
-  }
+  // if (
+  //   order.shipping_method !== "PICKUP" &&
+  //   order.fulfillment_status === "SHIPPED"
+  // ) {
+  //   return {
+  //     label: "Mark Delivered",
+  //     action: "delivered",
+  //   };
+  // }
 
   return null;
 }
@@ -113,7 +113,7 @@ export default function OrdersTable({
   onMarkReadyForPickup,
   onMarkPickedUp,
   onMarkShipped,
-  onMarkDelivered,
+  // onMarkDelivered,
   onVoid,
 }) {
   const totalPages = Math.max(1, Math.ceil(totalOrders / pageSize));
@@ -261,7 +261,7 @@ export default function OrdersTable({
                       </button>
                     )}
 
-                    {action?.action === "delivered" && (
+                    {/* {action?.action === "delivered" && (
                       <button
                         type="button"
                         disabled={updating}
@@ -270,7 +270,7 @@ export default function OrdersTable({
                       >
                         {updating ? "Updating..." : action.label}
                       </button>
-                    )}
+                    )} */}
                   </div>
                 </td>
               </tr>
