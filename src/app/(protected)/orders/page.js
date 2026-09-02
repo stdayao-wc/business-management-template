@@ -16,6 +16,17 @@ import OrderDetailsModal from "@/components/orders/OrderDetailsModal";
 
 import { toast } from "sonner";
 
+import {
+    getOrdersByDateRange,
+    getOrderDateRange,
+} from "@/services/orderQuery";
+
+import {
+    ORDER_PERIODS,
+} from "@/constants/orderPeriods";
+
+import OrderPeriodFilter from "@/components/orders/OrderPeriodFilter";
+
 import { useAuth } from "@/context/AuthContext";
 
 export default function OrdersPage() {
@@ -32,6 +43,10 @@ export default function OrdersPage() {
     const [page, setPage] = useState(1);
     const [pageSize] = useState(5);
     const [totalOrders, setTotalOrders] = useState(0);
+
+    const [period, setPeriod] = useState(
+        ORDER_PERIODS.MONTH
+    );
 
     function handlePageChange(nextPage) {
         if (nextPage < 1) {
@@ -51,14 +66,24 @@ export default function OrdersPage() {
         loadOrders(nextPage);
     }
 
-    async function loadOrders(pageNumber) {
+    async function loadOrders(
+        pageNumber = 1
+    ) {
         try {
             setLoading(true);
 
-            const result = await getOrders({
-                page: pageNumber,
-                pageSize,
-            });
+            const {
+                startDate,
+                endDate,
+            } = getOrderDateRange(period);
+
+            const result =
+                await getOrdersByDateRange({
+                    startDate,
+                    endDate,
+                    page: pageNumber,
+                    pageSize,
+                });
 
             setOrders(result.data);
             setTotalOrders(result.total);
@@ -82,7 +107,11 @@ export default function OrdersPage() {
 
     useEffect(() => {
         loadOrders(1);
-    }, []);
+    }, [period]);
+
+    useEffect(() => {
+        setPage(1);
+    }, [period]);
 
     async function handleStatusUpdate(
         orderId,
@@ -205,6 +234,11 @@ export default function OrdersPage() {
                     fulfillment.
                 </p>
             </div>
+
+            <OrderPeriodFilter
+                period={period}
+                onChange={setPeriod}
+            />
 
             <OrdersTable
                 orders={orders}
