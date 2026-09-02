@@ -7,7 +7,6 @@ import {
     markOrderReadyForPickup,
     markOrderPickedUp,
     markOrderShipped,
-    markOrderDelivered,
     voidOrder,
 } from "@/services/orders";
 
@@ -139,11 +138,11 @@ export default function OrdersPage() {
                 );
             }
 
-            if (action === "delivered") {
-                await markOrderDelivered(
-                    orderId
-                );
-            }
+            // if (action === "delivered") {
+            //     await markOrderDelivered(
+            //         orderId
+            //     );
+            // }
 
             await loadOrders(page);
 
@@ -156,13 +155,11 @@ export default function OrdersPage() {
                     return {
                         ...current,
                         fulfillment_status:
-                            action === "ready_for_pickup"
-                                ? "READY_FOR_PICKUP"
-                                : action === "picked_up"
-                                ? "PICKED_UP"
-                                : action === "shipped"
-                                ? "SHIPPED"
-                                : "DELIVERED",
+                        action === "ready_for_pickup"
+                                    ? "READY_FOR_PICKUP"
+                                    : action === "picked_up"
+                                    ? "PICKED_UP"
+                                    : "SHIPPED",
                     };
                 });
             }
@@ -271,12 +268,12 @@ export default function OrdersPage() {
                     )
                 }
 
-                onMarkDelivered={(orderId) =>
-                    handleStatusUpdate(
-                        orderId,
-                        "delivered"
-                    )
-                }
+                // onMarkDelivered={(orderId) =>
+                //     handleStatusUpdate(
+                //         orderId,
+                //         "delivered"
+                //     )
+                // }
 
                 onVoid={handleVoidOrder}
             />
