@@ -2,13 +2,26 @@ import { supabase } from "@/lib/supabase/client";
 
 const CASHIER_SESSIONS_TABLE = "cashier_sessions";
 
-export async function getActiveCashierSession(
-  cashierId
-) {
+function getDateRange(date) {
+  if (!date) {
+    throw new Error("Date is required.");
+  }
+
+  const startOfDay = new Date(`${date}T00:00:00`);
+
+  const startOfNextDay = new Date(startOfDay);
+
+  startOfNextDay.setDate(startOfNextDay.getDate() + 1);
+
+  return {
+    startDate: startOfDay.toISOString(),
+    endDate: startOfNextDay.toISOString(),
+  };
+}
+
+export async function getActiveCashierSession(cashierId) {
   if (!cashierId) {
-    throw new Error(
-      "Cashier ID is required."
-    );
+    throw new Error("Cashier ID is required.");
   }
 
   const { data, error } = await supabase
@@ -29,13 +42,44 @@ export async function getActiveCashierSession(
   return data;
 }
 
-export async function startCashierSession(
-  cashierId
-) {
+export async function getCashierSessionsForDate({
+  cashierId,
+  date,
+}) {
   if (!cashierId) {
-    throw new Error(
-      "Cashier ID is required."
-    );
+    throw new Error("Cashier ID is required.");
+  }
+
+  const {
+    startDate,
+    endDate,
+  } = getDateRange(date);
+
+  const { data, error } = await supabase
+    .from(CASHIER_SESSIONS_TABLE)
+    .select(`
+      id,
+      cashier_id,
+      time_in,
+      time_out
+    `)
+    .eq("cashier_id", cashierId)
+    .gte("time_in", startDate)
+    .lt("time_in", endDate)
+    .order("time_in", {
+      ascending: true,
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+export async function startCashierSession(cashierId) {
+  if (!cashierId) {
+    throw new Error("Cashier ID is required.");
   }
 
   const activeSession =
@@ -43,7 +87,7 @@ export async function startCashierSession(
 
   if (activeSession) {
     throw new Error(
-      "You already have an active cashier session."
+      "You already have an active cashier session.",
     );
   }
 
@@ -64,18 +108,14 @@ export async function startCashierSession(
 
 export async function endCashierSession(
   sessionId,
-  cashierId
+  cashierId,
 ) {
   if (!sessionId) {
-    throw new Error(
-      "Session ID is required."
-    );
+    throw new Error("Session ID is required.");
   }
 
   if (!cashierId) {
-    throw new Error(
-      "Cashier ID is required."
-    );
+    throw new Error("Cashier ID is required.");
   }
 
   const { data, error } = await supabase

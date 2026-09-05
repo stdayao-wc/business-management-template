@@ -5,32 +5,57 @@ import { useEffect, useMemo, useState } from "react";
 import ProductSearch from "@/components/pos/ProductSearch";
 import ProductGrid from "@/components/pos/ProductGrid";
 import CartPanel from "@/components/pos/CartPanel";
+import CheckoutDialog from "@/components/pos/CheckoutDialog";
+import ReceiptModal from "@/components/pos/ReceiptModal";
+import EmployeeDailySummaryExportModal from "@/components/pos/EmployeeDailySummaryExportModal";
+import EmployeeDailySummaryModal from "@/components/pos/EmployeeDailySummaryModal";
+
+import QRScanner from "@/components/scanner/QRScanner";
 
 import { getPOSProducts, checkout } from "@/services/pos";
 
-import { useCart } from "@/hooks/useCart";
-import CheckoutDialog from "@/components/pos/CheckoutDialog";
-import { useAuth } from "@/context/AuthContext";
-import ReceiptModal from "@/components/pos/ReceiptModal";
-import { toast } from "sonner";
-import QRScanner from "@/components/scanner/QRScanner";
-
 import { getInventoryItemByCode } from "@/services/inventory";
+
 import { getTodayPaymentSummary } from "@/services/sales";
+
+import { getDailySalesSummary } from "@/services/dailySalesSummary";
 
 import {
   getActiveCashierSession,
+  getCashierSessionsForDate,
   startCashierSession,
   endCashierSession,
 } from "@/services/cashierSessions";
 
+import { useCart } from "@/hooks/useCart";
+
+import { useAuth } from "@/context/AuthContext";
+
+import { toast } from "sonner";
+
+function getTodayDate() {
+  const today = new Date();
+
+  const year = today.getFullYear();
+
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+
+  const day = String(today.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 export default function POSPage() {
   const [products, setProducts] = useState([]);
+
   const [loading, setLoading] = useState(true);
+
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+
   const [receipt, setReceipt] = useState(null);
-  const { user, profile } = useAuth();
+
   const [searchTerm, setSearchTerm] = useState("");
+
   const [scannerOpen, setScannerOpen] = useState(false);
 
   const [cashierSession, setCashierSession] = useState(null);
@@ -39,11 +64,34 @@ export default function POSPage() {
 
   const [sessionUpdating, setSessionUpdating] = useState(false);
 
+  const [dailySummaryExportOpen, setDailySummaryExportOpen] = useState(false);
+
+  const [employeeDailySummary, setEmployeeDailySummary] = useState(null);
+
+  const [exportingDailySummary, setExportingDailySummary] = useState(false);
+
+  const { user, profile } = useAuth();
+
   const [paymentSummary, setPaymentSummary] = useState({
     cash: 0,
     eWallet: 0,
     onlineBanking: 0,
   });
+
+  const {
+    cart,
+    totals,
+
+    addToCart,
+    addInventoryItemToCart,
+
+    increaseQuantity,
+    decreaseQuantity,
+
+    removeItem,
+
+    clearCart,
+  } = useCart();
 
   function openCheckout() {
     setCheckoutOpen(true);
@@ -60,19 +108,25 @@ export default function POSPage() {
         cart,
 
         shippingMethod: payment.shippingMethod,
+
         customerName: payment.customerName,
+
         customerPhone: payment.customerPhone,
+
         shippingAddress: payment.shippingAddress,
 
         paymentMethod: payment.paymentMethod,
 
         discountAmount: payment.discountAmount,
+
         shippingFee: payment.shippingFee,
 
         isDownpayment: payment.isDownpayment,
 
         amountReceived: payment.amountReceived,
+
         changeGiven: payment.changeGiven,
+
         notes: payment.notes,
       });
 
@@ -87,6 +141,7 @@ export default function POSPage() {
       clearCart();
 
       await loadProducts();
+
       await loadPaymentSummary();
 
       closeCheckout();
@@ -101,20 +156,9 @@ export default function POSPage() {
     }
   }
 
-  const {
-    cart,
-    totals,
-
-    addToCart,
-    addInventoryItemToCart,
-    increaseQuantity,
-    decreaseQuantity,
-    removeItem,
-    clearCart,
-  } = useCart();
-
   useEffect(() => {
     loadProducts();
+
     loadPaymentSummary();
   }, []);
 
@@ -125,6 +169,7 @@ export default function POSPage() {
   async function loadProducts() {
     try {
       const data = await getPOSProducts();
+
       setProducts(data);
     } finally {
       setLoading(false);
@@ -243,6 +288,8 @@ export default function POSPage() {
         setCashierSession(null);
 
         toast.success("Cashier session ended.");
+
+        setDailySummaryExportOpen(true);
       } else {
         const session = await startCashierSession(user.id);
 
@@ -256,6 +303,53 @@ export default function POSPage() {
       toast.error(error?.message || "Unable to update cashier session.");
     } finally {
       setSessionUpdating(false);
+    }
+  }
+
+  async function handleExportDailySummary() {
+    if (!user?.id) {
+      toast.error("Unable to determine the current cashier.");
+
+      return;
+    }
+
+    try {
+      setExportingDailySummary(true);
+
+      const date = getTodayDate();
+
+      const [sessions, salesSummary] = await Promise.all([
+        getCashierSessionsForDate({
+          cashierId: user.id,
+
+          date,
+        }),
+
+        getDailySalesSummary({
+          date,
+          cashierId: user.id,
+        }),
+      ]);
+
+      const cashierName = [profile?.first_name, profile?.last_name]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      setEmployeeDailySummary({
+        cashierName,
+        date,
+        sessions,
+        salesSummary,
+      });
+
+      setDailySummaryExportOpen(false);
+    } catch (error) {
+      console.error("Failed to load daily summary:", error);
+
+      toast.error(error?.message || "Unable to load daily summary.");
+    } finally {
+      setExportingDailySummary(false);
     }
   }
 
@@ -291,7 +385,6 @@ export default function POSPage() {
 
       {/* POS */}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12"></div>
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="space-y-4 lg:col-span-8">
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
@@ -374,10 +467,24 @@ export default function POSPage() {
           receipt={receipt}
           onClose={() => setReceipt(null)}
         />
+
         <QRScanner
           open={scannerOpen}
           onScan={handleScan}
           onClose={() => setScannerOpen(false)}
+        />
+
+        <EmployeeDailySummaryExportModal
+          open={dailySummaryExportOpen}
+          onClose={() => setDailySummaryExportOpen(false)}
+          onExport={handleExportDailySummary}
+          loading={exportingDailySummary}
+        />
+
+        <EmployeeDailySummaryModal
+          open={employeeDailySummary !== null}
+          summary={employeeDailySummary}
+          onClose={() => setEmployeeDailySummary(null)}
         />
       </div>
     </div>
