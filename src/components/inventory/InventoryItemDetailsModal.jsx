@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import Modal from "@/components/common/Modal";
 
 import { useAuth } from "@/context/AuthContext";
+
+import {
+  getInventoryLocations,
+  updateInventoryItemLocation,
+} from "@/services/inventory";
 
 import { restoreDamagedInventoryItems } from "@/services/inventoryDamage";
 
@@ -20,11 +25,71 @@ export default function InventoryItemDetailsModal({
 
   const [loading, setLoading] = useState(false);
 
+  const [locations, setLocations] = useState([]);
+
+  const [locationsLoading, setLocationsLoading] = useState(false);
+
+  const [selectedLocationId, setSelectedLocationId] = useState("");
+
   if (!item) {
     return null;
   }
 
   const isDamaged = item.status?.name === INVENTORY_ITEM_STATUSES.DAMAGED;
+
+  const locationChanged =
+    selectedLocationId && selectedLocationId !== item.location_id;
+
+  useEffect(() => {
+    if (!open || !item) {
+      return;
+    }
+
+    setSelectedLocationId(item.location_id ?? "");
+
+    async function loadLocations() {
+      try {
+        setLocationsLoading(true);
+
+        const data = await getInventoryLocations();
+
+        setLocations(data);
+      } catch (error) {
+        console.error("Failed to load inventory locations:", error);
+
+        alert(error?.message || "Unable to load inventory locations.");
+      } finally {
+        setLocationsLoading(false);
+      }
+    }
+
+    loadLocations();
+  }, [open, item]);
+
+  async function handleUpdateLocation() {
+    try {
+      if (!locationChanged) {
+        return;
+      }
+
+      setLoading(true);
+
+      await updateInventoryItemLocation({
+        inventoryItemId: item.id,
+        locationId: selectedLocationId,
+        performedBy: user.id,
+      });
+
+      onSuccess?.();
+      onClose();
+    } catch (error) {
+      console.error("Failed to update inventory item location:", error);
+
+      alert(error?.message || "Unable to update inventory item location.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleRestore() {
     try {
@@ -74,9 +139,30 @@ export default function InventoryItemDetailsModal({
           </div>
 
           <div>
-            <p className="text-sm text-gray-500">Location</p>
+            <label className="mb-1 block text-sm text-gray-500">Location</label>
 
-            <p className="font-medium">{item.location?.name ?? "-"}</p>
+            {locationsLoading ? (
+              <div className="rounded-lg border px-3 py-2 text-sm text-gray-500">
+                Loading locations...
+              </div>
+            ) : (
+              <select
+                value={selectedLocationId}
+                onChange={(event) => setSelectedLocationId(event.target.value)}
+                disabled={loading || locations.length === 0}
+                className="w-full rounded-lg border px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {locations.length === 0 ? (
+                  <option value="">No active locations</option>
+                ) : (
+                  locations.map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            )}
           </div>
         </div>
 
@@ -100,8 +186,21 @@ export default function InventoryItemDetailsModal({
           </div>
         </div>
 
-        {isDamaged && (
+        {locationChanged && (
           <div className="border-t pt-5">
+            <button
+              type="button"
+              onClick={handleUpdateLocation}
+              disabled={loading || locationsLoading}
+              className="w-full rounded-lg bg-blue-600 px-4 py-2 font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? "Updating Location..." : "Update Location"}
+            </button>
+          </div>
+        )}
+
+        {isDamaged && (
+          <div className={locationChanged ? "" : "border-t pt-5"}>
             <button
               type="button"
               onClick={handleRestore}

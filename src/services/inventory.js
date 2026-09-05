@@ -1018,3 +1018,85 @@ export async function returnSoldInventoryItems(
 
     return data;
 }
+
+export async function updateInventoryItemLocation({
+    inventoryItemId,
+    locationId,
+    performedBy,
+}) {
+    if (!inventoryItemId) {
+        throw new Error("Inventory item ID is required.");
+    }
+
+    if (!locationId) {
+        throw new Error("Inventory location is required.");
+    }
+
+    if (!performedBy) {
+        throw new Error(
+            "User performing the inventory transaction is required."
+        );
+    }
+
+    const { data: item, error: itemError } = await supabase
+        .from(INVENTORY_TABLE)
+        .select(`
+            id,
+            status_id,
+            location_id
+        `)
+        .eq("id", inventoryItemId)
+        .single();
+
+    if (itemError) {
+        throw itemError;
+    }
+
+    if (item.location_id === locationId) {
+        return item;
+    }
+
+    const { data: location, error: locationError } = await supabase
+        .from("locations")
+        .select("id, name")
+        .eq("id", locationId)
+        .eq("is_active", true)
+        .single();
+
+    if (locationError) {
+        throw locationError;
+    }
+
+    const previousLocationId = item.location_id;
+
+    const { data, error } = await supabase
+        .from(INVENTORY_TABLE)
+        .update({
+            location_id: location.id,
+        })
+        .eq("id", inventoryItemId)
+        .select()
+        .single();
+
+    if (error) {
+        throw error;
+    }
+
+    await createInventoryTransaction({
+        inventoryItemId: item.id,
+
+        transactionType: "ADJUST",
+
+        fromStatusId: item.status_id,
+        toStatusId: item.status_id,
+
+        fromLocationId: previousLocationId,
+        toLocationId: location.id,
+
+        performedBy,
+
+        notes: "Inventory item location updated.",
+    });
+
+    return data;
+}
