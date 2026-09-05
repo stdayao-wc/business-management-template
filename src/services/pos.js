@@ -9,6 +9,8 @@ import {
     reserveInventoryItems,
 } from "@/services/inventory";
 
+import { createSalePayment } from "@/services/salePayments";
+
 export function calculateTotals(
     cart,
     {
@@ -524,29 +526,43 @@ export async function checkout({
             ? normalizedAmountReceived
             : 0;
 
-    const sale =
-        await createSale({
-            cashierId,
-            totals,
+   const sale =
+    await createSale({
+        cashierId,
+        totals,
 
-            shippingMethod,
-            customerName,
-            customerPhone,
-            shippingAddress,
+        shippingMethod,
+        customerName,
+        customerPhone,
+        shippingAddress,
 
-            paymentMethod,
-            amountReceived:
-                normalizedAmountReceived,
-            changeGiven:
-                normalizedChangeGiven,
-            notes,
+        paymentMethod,
+        amountReceived:
+            normalizedAmountReceived,
+        changeGiven:
+            normalizedChangeGiven,
+        notes,
 
-            isDownpayment,
-            downpaymentAmount:
-                normalizedDownpaymentAmount,
-        });
+        isDownpayment,
+        downpaymentAmount:
+            normalizedDownpaymentAmount,
+    });
 
-    try {
+try {
+    await createSalePayment({
+        saleId: sale.id,
+        paymentMethod,
+        amount: isDownpayment
+            ? normalizedDownpaymentAmount
+            : totals.total,
+        receivedBy: cashierId,
+        notes,
+    });
+
+    await createSaleItems(
+        sale.id,
+        cart
+    );
         await createSaleItems(
             sale.id,
             cart

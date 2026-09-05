@@ -149,7 +149,6 @@ function validateFulfillmentTransition(
         "Invalid shipping method."
     );
 }
-
 async function fulfillReservedInventory(
     orderId,
     performedBy
@@ -218,12 +217,15 @@ async function updateFulfillmentStatus(
         nextStatus
     );
 
+    const isFinalFulfillmentStep =
+        nextStatus ===
+            FULFILLMENT_STATUSES.PICKED_UP ||
+        nextStatus ===
+            FULFILLMENT_STATUSES.SHIPPED;
+
     if (
         order.is_downpayment &&
-        (
-            nextStatus === FULFILLMENT_STATUSES.PICKED_UP ||
-            nextStatus === FULFILLMENT_STATUSES.DELIVERED
-        )
+        isFinalFulfillmentStep
     ) {
         await fulfillReservedInventory(
             orderId,
@@ -253,7 +255,7 @@ export async function markOrderReadyForPickup(
     performedBy
 ) {
     return updateFulfillmentStatus(
-        orderId,
+    orderId,
         FULFILLMENT_STATUSES.READY_FOR_PICKUP,
         performedBy
     );
