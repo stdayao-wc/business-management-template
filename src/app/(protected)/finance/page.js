@@ -21,9 +21,12 @@ import DeductableModal from "@/components/finance/DeductableModal";
 import DailySalesSummaryModal from "@/components/finance/DailySalesSummaryModal";
 
 export default function FinancePage() {
-    const [period, setPeriod] = useState(
-        FINANCE_PERIODS.MONTH
-    );
+const [period, setPeriod] = useState(
+    FINANCE_PERIODS.MONTH
+);
+
+const [selectedDate, setSelectedDate] =
+    useState(new Date());
 
     const [transactions, setTransactions] =
         useState([]);
@@ -50,6 +53,7 @@ export default function FinancePage() {
         dailySalesSummaryOpen,
         setDailySalesSummaryOpen,
     ] = useState(false);
+    
 
     const { user } = useAuth();
 
@@ -57,10 +61,13 @@ export default function FinancePage() {
         try {
             setLoading(true);
 
-            const {
-                startDate,
-                endDate,
-            } = getFinanceDateRange(period);
+const {
+    startDate,
+    endDate,
+} = getFinanceDateRange(
+    period,
+    selectedDate
+);
 
             const [
                 transactionData,
@@ -110,13 +117,20 @@ export default function FinancePage() {
         await loadFinance();
     }
 
-    useEffect(() => {
-        loadFinance();
-    }, [period, page]);
+useEffect(() => {
+    loadFinance();
+}, [
+    period,
+    selectedDate,
+    page,
+]);
 
-    useEffect(() => {
-        setPage(1);
-    }, [period]);
+useEffect(() => {
+    setPage(1);
+}, [
+    period,
+    selectedDate,
+]);
 
     function handlePageChange(nextPage) {
         if (nextPage < 1) {
@@ -148,10 +162,12 @@ export default function FinancePage() {
             }
         />
 
-            <FinancePeriodFilter
-                period={period}
-                onChange={setPeriod}
-            />
+<FinancePeriodFilter
+    period={period}
+    selectedDate={selectedDate}
+    onChange={setPeriod}
+    onDateChange={setSelectedDate}
+/>
 
             <FinanceSummary
                 totals={totals}
