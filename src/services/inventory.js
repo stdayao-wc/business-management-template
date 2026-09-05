@@ -39,6 +39,22 @@ async function getDefaultInventoryLocation() {
     return data;
 }
 
+export async function getInventoryLocations() {
+    const { data, error } = await supabase
+        .from("locations")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("created_at", {
+            ascending: true,
+        });
+
+    if (error) {
+        throw error;
+    }
+
+    return data ?? [];
+}
+
 async function getProduct(productId) {
     const { data, error } = await supabase
         .from(PRODUCTS_TABLE)
@@ -140,18 +156,40 @@ async function createInventoryTransaction({
 export async function receiveStock({
     productId,
     quantity,
+    locationId,
     performedBy,
 }) {
     if (!Number.isInteger(quantity) || quantity <= 0) {
         throw new Error("Quantity must be a positive integer.");
     }
 
-    const product = await getProduct(productId);
-    const status = await getInventoryStatus(
-        INVENTORY_ITEM_STATUSES.IN_STOCK
-    );
-    const currentCount = await getInventoryCount(productId);
-    const location = await getDefaultInventoryLocation();
+    if (!locationId) {
+        throw new Error("Inventory location is required.");
+    }
+
+    const [
+        product,
+        status,
+        currentCount,
+    ] = await Promise.all([
+        getProduct(productId),
+        getInventoryStatus(
+            INVENTORY_ITEM_STATUSES.IN_STOCK
+        ),
+        getInventoryCount(productId),
+    ]);
+
+    const { data: location, error: locationError } =
+        await supabase
+            .from("locations")
+            .select("id, name")
+            .eq("id", locationId)
+            .eq("is_active", true)
+            .single();
+
+    if (locationError) {
+        throw locationError;
+    }
 
     const items = buildInventoryItems(
         product,
@@ -166,7 +204,9 @@ export async function receiveStock({
         .insert(items)
         .select();
 
-    if (error) throw error;
+    if (error) {
+        throw error;
+    }
 
     for (const item of data) {
         await createInventoryTransaction({
@@ -182,11 +222,11 @@ export async function receiveStock({
 
     return {
         product,
+        location,
         quantity,
         items: data,
     };
 }
-
 async function updateInventoryItemStatus({
     productId,
     quantity,

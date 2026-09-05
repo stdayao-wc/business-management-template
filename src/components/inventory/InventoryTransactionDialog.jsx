@@ -10,7 +10,8 @@ import { INVENTORY_ITEM_STATUSES } from "@/constants/inventoryStatuses";
 
 import { useAuth } from "@/context/AuthContext";
 
-import { getInventoryItems } from "@/services/inventory";
+import { getInventoryItems, getInventoryLocations } from "@/services/inventory";
+
 import { damageInventoryItems } from "@/services/inventoryDamage";
 
 export default function InventoryTransactionDialog({
@@ -23,14 +24,26 @@ export default function InventoryTransactionDialog({
   const { user } = useAuth();
 
   const [quantity, setQuantity] = useState(1);
+
   const [inventoryItems, setInventoryItems] = useState([]);
+
   const [selectedItemIds, setSelectedItemIds] = useState([]);
+
+  const [locations, setLocations] = useState([]);
+
+  const [selectedLocationId, setSelectedLocationId] = useState("");
+
   const [loading, setLoading] = useState(false);
+
   const [itemsLoading, setItemsLoading] = useState(false);
+
+  const [locationsLoading, setLocationsLoading] = useState(false);
 
   const config = TRANSACTION_CONFIG[type];
 
   const isDamage = type === INVENTORY_TRANSACTION_TYPES.DAMAGE;
+
+  const isReceive = type === INVENTORY_TRANSACTION_TYPES.RECEIVE;
 
   useEffect(() => {
     if (!open) {
@@ -40,9 +53,15 @@ export default function InventoryTransactionDialog({
     setQuantity(1);
     setSelectedItemIds([]);
     setInventoryItems([]);
+    setLocations([]);
+    setSelectedLocationId("");
 
-    if (!isDamage || !product) {
-      return;
+    if (isDamage && product) {
+      loadAvailableItems();
+    }
+
+    if (isReceive) {
+      loadLocations();
     }
 
     async function loadAvailableItems() {
@@ -58,14 +77,33 @@ export default function InventoryTransactionDialog({
         setInventoryItems(availableItems);
       } catch (error) {
         console.error(error);
+
         alert(error?.message || "Unable to load inventory items.");
       } finally {
         setItemsLoading(false);
       }
     }
 
-    loadAvailableItems();
-  }, [open, product, type, isDamage]);
+    async function loadLocations() {
+      try {
+        setLocationsLoading(true);
+
+        const data = await getInventoryLocations();
+
+        setLocations(data);
+
+        if (data.length > 0) {
+          setSelectedLocationId(data[0].id);
+        }
+      } catch (error) {
+        console.error(error);
+
+        alert(error?.message || "Unable to load inventory locations.");
+      } finally {
+        setLocationsLoading(false);
+      }
+    }
+  }, [open, product, type, isDamage, isReceive]);
 
   if (!config || !product) {
     return null;
@@ -108,9 +146,14 @@ export default function InventoryTransactionDialog({
           throw new Error(`${config.title} is not implemented yet.`);
         }
 
+        if (isReceive && !selectedLocationId) {
+          throw new Error("Select an inventory location.");
+        }
+
         await config.service({
           productId: product.id,
           quantity,
+          locationId: isReceive ? selectedLocationId : undefined,
           performedBy: user.id,
         });
       }
@@ -120,6 +163,7 @@ export default function InventoryTransactionDialog({
       onClose();
     } catch (error) {
       console.error(error);
+
       alert(error.message);
     } finally {
       setLoading(false);
@@ -213,17 +257,52 @@ export default function InventoryTransactionDialog({
             )}
           </div>
         ) : (
-          <div>
-            <label className="mb-2 block text-sm font-medium">Quantity</label>
+          <div className="space-y-4">
+            <div>
+              <label className="mb-2 block text-sm font-medium">Quantity</label>
 
-            <input
-              type="number"
-              min={1}
-              value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value))}
-              disabled={loading}
-              className="w-full rounded-lg border px-3 py-2"
-            />
+              <input
+                type="number"
+                min={1}
+                value={quantity}
+                onChange={(e) => setQuantity(Number(e.target.value))}
+                disabled={loading}
+                className="w-full rounded-lg border px-3 py-2"
+              />
+            </div>
+
+            {isReceive && (
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  Receive into
+                </label>
+
+                {locationsLoading ? (
+                  <div className="rounded-lg border px-3 py-2 text-sm text-gray-500">
+                    Loading inventory locations...
+                  </div>
+                ) : locations.length === 0 ? (
+                  <div className="rounded-lg border px-3 py-2 text-sm text-gray-500">
+                    No active inventory locations available.
+                  </div>
+                ) : (
+                  <select
+                    value={selectedLocationId}
+                    onChange={(event) =>
+                      setSelectedLocationId(event.target.value)
+                    }
+                    disabled={loading}
+                    className="w-full rounded-lg border px-3 py-2"
+                  >
+                    {locations.map((location) => (
+                      <option key={location.id} value={location.id}>
+                        {location.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -243,7 +322,10 @@ export default function InventoryTransactionDialog({
             disabled={
               loading ||
               itemsLoading ||
-              (isDamage && selectedItemIds.length === 0)
+              locationsLoading ||
+              (isDamage && selectedItemIds.length === 0) ||
+              (isReceive && locations.length === 0) ||
+              (isReceive && !selectedLocationId)
             }
             className={`rounded-lg px-4 py-2 text-white ${
               isDamage
