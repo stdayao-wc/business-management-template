@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 
 import {
-    getOrders,
     markOrderReadyForPickup,
     markOrderPickedUp,
     markOrderShipped,
@@ -12,6 +11,7 @@ import {
 
 import OrdersTable from "@/components/orders/OrdersTable";
 import OrderDetailsModal from "@/components/orders/OrderDetailsModal";
+import CollectBalanceModal from "@/components/orders/CollectBalanceModal";
 
 import { toast } from "sonner";
 
@@ -30,6 +30,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function OrdersPage() {
     const { user } = useAuth();
+
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -41,11 +42,25 @@ export default function OrdersPage() {
 
     const [page, setPage] = useState(1);
     const [pageSize] = useState(5);
-    const [totalOrders, setTotalOrders] = useState(0);
+
+    const [
+        totalOrders,
+        setTotalOrders,
+    ] = useState(0);
 
     const [period, setPeriod] = useState(
         ORDER_PERIODS.MONTH
     );
+
+    const [
+        balanceOrder,
+        setBalanceOrder,
+    ] = useState(null);
+
+    const [
+        pendingFulfillmentAction,
+        setPendingFulfillmentAction,
+    ] = useState(null);
 
     function handlePageChange(nextPage) {
         if (nextPage < 1) {
@@ -54,7 +69,9 @@ export default function OrdersPage() {
 
         const totalPages = Math.max(
             1,
-            Math.ceil(totalOrders / pageSize)
+            Math.ceil(
+                totalOrders / pageSize
+            )
         );
 
         if (nextPage > totalPages) {
@@ -62,6 +79,7 @@ export default function OrdersPage() {
         }
 
         setPage(nextPage);
+
         loadOrders(nextPage);
     }
 
@@ -85,7 +103,10 @@ export default function OrdersPage() {
                 });
 
             setOrders(result.data);
-            setTotalOrders(result.total);
+
+            setTotalOrders(
+                result.total
+            );
 
             return result;
         } catch (error) {
@@ -112,7 +133,7 @@ export default function OrdersPage() {
         setPage(1);
     }, [period]);
 
-    async function handleStatusUpdate(
+    async function performStatusUpdate(
         orderId,
         action
     ) {
@@ -120,48 +141,73 @@ export default function OrdersPage() {
             return;
         }
 
+        if (!user?.id) {
+            toast.error(
+                "Unable to determine the current user."
+            );
+
+            return;
+        }
+
         try {
             setUpdatingOrderId(orderId);
-            if (action === "ready_for_pickup") {
-                await markOrderReadyForPickup(orderId);
+
+            if (
+                action ===
+                "ready_for_pickup"
+            ) {
+                await markOrderReadyForPickup(
+                    orderId,
+                    user.id
+                );
             }
 
-            if (action === "picked_up") {
+            if (
+                action ===
+                "picked_up"
+            ) {
                 await markOrderPickedUp(
-                    orderId
+                    orderId,
+                    user.id
                 );
             }
 
-            if (action === "shipped") {
+            if (
+                action ===
+                "shipped"
+            ) {
                 await markOrderShipped(
-                    orderId
+                    orderId,
+                    user.id
                 );
             }
-
-            // if (action === "delivered") {
-            //     await markOrderDelivered(
-            //         orderId
-            //     );
-            // }
 
             await loadOrders(page);
 
-            if (selectedOrder?.id === orderId) {
-                setSelectedOrder((current) => {
-                    if (!current) {
-                        return current;
-                    }
+            if (
+                selectedOrder?.id ===
+                orderId
+            ) {
+                setSelectedOrder(
+                    (current) => {
+                        if (!current) {
+                            return current;
+                        }
 
-                    return {
-                        ...current,
-                        fulfillment_status:
-                        action === "ready_for_pickup"
+                        return {
+                            ...current,
+
+                            fulfillment_status:
+                                action ===
+                                "ready_for_pickup"
                                     ? "READY_FOR_PICKUP"
-                                    : action === "picked_up"
-                                    ? "PICKED_UP"
-                                    : "SHIPPED",
-                    };
-                });
+                                    : action ===
+                                        "picked_up"
+                                      ? "PICKED_UP"
+                                      : "SHIPPED",
+                        };
+                    }
+                );
             }
 
             toast.success(
@@ -182,8 +228,90 @@ export default function OrdersPage() {
         }
     }
 
+    function handleStatusUpdate(
+        orderId,
+        action
+    ) {
+        const order = orders.find(
+            (item) =>
+                item.id === orderId
+        );
+
+        if (!order) {
+            toast.error(
+                "Order could not be found."
+            );
+
+            return;
+        }
+
+        const requiresFinalPayment =
+            order.is_downpayment &&
+            (
+                action === "picked_up" ||
+                action === "shipped"
+            );
+
+        if (requiresFinalPayment) {
+            setBalanceOrder(order);
+
+            setPendingFulfillmentAction(
+                action
+            );
+
+            return;
+        }
+
+        performStatusUpdate(
+            orderId,
+            action
+        );
+    }
+
+    async function handleBalancePaymentSuccess() {
+        if (
+            !balanceOrder?.id ||
+            !pendingFulfillmentAction
+        ) {
+            return;
+        }
+
+        const orderId =
+            balanceOrder.id;
+
+        const action =
+            pendingFulfillmentAction;
+
+        setBalanceOrder(null);
+
+        setPendingFulfillmentAction(
+            null
+        );
+
+        await performStatusUpdate(
+            orderId,
+            action
+        );
+    }
+
+    function handleCloseBalanceModal() {
+        setBalanceOrder(null);
+
+        setPendingFulfillmentAction(
+            null
+        );
+    }
+
     async function handleVoidOrder(orderId) {
         if (updatingOrderId) {
+            return;
+        }
+
+        if (!user?.id) {
+            toast.error(
+                "Unable to determine the current user."
+            );
+
             return;
         }
 
@@ -197,7 +325,10 @@ export default function OrdersPage() {
 
             await loadOrders(page);
 
-            if (selectedOrder?.id === orderId) {
+            if (
+                selectedOrder?.id ===
+                orderId
+            ) {
                 setSelectedOrder(null);
             }
 
@@ -240,49 +371,76 @@ export default function OrdersPage() {
             <OrdersTable
                 orders={orders}
                 loading={loading}
-                updatingOrderId={updatingOrderId}
+                updatingOrderId={
+                    updatingOrderId
+                }
                 page={page}
                 pageSize={pageSize}
-                totalOrders={totalOrders}
-                onPageChange={handlePageChange}
-                onView={setSelectedOrder}
-
-                onMarkReadyForPickup={(orderId) =>
+                totalOrders={
+                    totalOrders
+                }
+                onPageChange={
+                    handlePageChange
+                }
+                onView={
+                    setSelectedOrder
+                }
+                onMarkReadyForPickup={(
+                    orderId
+                ) =>
                     handleStatusUpdate(
                         orderId,
                         "ready_for_pickup"
                     )
                 }
-
-                onMarkPickedUp={(orderId) =>
+                onMarkPickedUp={(
+                    orderId
+                ) =>
                     handleStatusUpdate(
                         orderId,
                         "picked_up"
                     )
                 }
-
-                onMarkShipped={(orderId) =>
+                onMarkShipped={(
+                    orderId
+                ) =>
                     handleStatusUpdate(
                         orderId,
                         "shipped"
                     )
                 }
-
-                // onMarkDelivered={(orderId) =>
-                //     handleStatusUpdate(
-                //         orderId,
-                //         "delivered"
-                //     )
-                // }
-
-                onVoid={handleVoidOrder}
+                onVoid={
+                    handleVoidOrder
+                }
             />
 
             <OrderDetailsModal
-                open={selectedOrder !== null}
-                order={selectedOrder}
+                open={
+                    selectedOrder !== null
+                }
+                order={
+                    selectedOrder
+                }
                 onClose={() =>
                     setSelectedOrder(null)
+                }
+            />
+
+            <CollectBalanceModal
+                open={
+                    balanceOrder !== null
+                }
+                order={
+                    balanceOrder
+                }
+                user={
+                    user
+                }
+                onClose={
+                    handleCloseBalanceModal
+                }
+                onSuccess={
+                    handleBalancePaymentSuccess
                 }
             />
         </div>

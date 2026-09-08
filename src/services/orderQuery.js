@@ -78,6 +78,41 @@ export function getOrderDateRange(period) {
 }
 
 /**
+ * Adds payment summary fields to an order.
+ */
+function addOrderPaymentSummary(order) {
+    const payments =
+        order.sale_payments ?? [];
+
+    const amountPaid =
+        payments.reduce(
+            (total, payment) =>
+                total +
+                (Number(payment.amount) || 0),
+            0
+        );
+
+    const orderTotal =
+        Number(order.total) || 0;
+
+    const remainingBalance =
+        Math.max(
+            orderTotal - amountPaid,
+            0
+        );
+
+    return {
+        ...order,
+
+        amount_paid:
+            amountPaid,
+
+        remaining_balance:
+            remainingBalance,
+    };
+}
+
+/**
  * Returns paginated orders within a date range.
  */
 export async function getOrdersByDateRange({
@@ -122,6 +157,14 @@ export async function getOrdersByDateRange({
                     name,
                     image_path
                 )
+            ),
+            sale_payments (
+                id,
+                payment_method,
+                amount,
+                received_by,
+                notes,
+                created_at
             )
             `,
             {
@@ -157,8 +200,13 @@ export async function getOrdersByDateRange({
         throw error;
     }
 
+    const orders =
+        (data ?? []).map(
+            addOrderPaymentSummary
+        );
+
     return {
-        data,
+        data: orders,
         total: count ?? 0,
         page: safePage,
         pageSize: safePageSize,

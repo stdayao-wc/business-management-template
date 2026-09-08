@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 import { getProducts, deleteProduct } from "@/services/products";
+import CategoryDialog from "@/components/inventory/CategoryDialog";
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -28,6 +29,8 @@ export default function ProductsPage() {
   const [isBrandDialogOpen, setIsBrandDialogOpen] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
+
+  const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
 
   const { can } = useAuth();
 
@@ -52,6 +55,14 @@ export default function ProductsPage() {
 
   function handleCloseBrandDialog() {
     setIsBrandDialogOpen(false);
+  }
+
+  function handleOpenCategoryDialog() {
+    setIsCategoryDialogOpen(true);
+  }
+
+  function handleCloseCategoryDialog() {
+    setIsCategoryDialogOpen(false);
   }
 
   async function loadProducts() {
@@ -150,6 +161,14 @@ export default function ProductsPage() {
           <div className="flex items-center gap-3">
             <button
               type="button"
+              onClick={handleOpenCategoryDialog}
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
+            >
+              Manage Categories
+            </button>
+
+            <button
+              type="button"
               onClick={handleOpenBrandDialog}
               className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 transition hover:bg-gray-50"
             >
@@ -238,6 +257,10 @@ export default function ProductsPage() {
       />
 
       <BrandDialog open={isBrandDialogOpen} onClose={handleCloseBrandDialog} />
+      <CategoryDialog
+        open={isCategoryDialogOpen}
+        onClose={handleCloseCategoryDialog}
+      />
     </div>
   );
 }

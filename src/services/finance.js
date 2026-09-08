@@ -276,64 +276,102 @@ export const FINANCE_PERIODS = {
     MONTH: "month",
     YEAR: "year",
 };
+export function getFinanceDateRange(
+    period,
+    selectedDate = new Date()
+) {
+    const date =
+        selectedDate instanceof Date
+            ? new Date(selectedDate)
+            : new Date(selectedDate);
 
-export function getFinanceDateRange(period) {
-    const now = new Date();
+    if (Number.isNaN(date.getTime())) {
+        throw new Error(
+            "Invalid finance date."
+        );
+    }
 
     if (period === FINANCE_PERIODS.DAY) {
-        const start = new Date(now);
+        const start = new Date(date);
 
         start.setHours(0, 0, 0, 0);
 
+        const end = new Date(start);
+
+        end.setDate(
+            end.getDate() + 1
+        );
+
         return {
             startDate: start.toISOString(),
-            endDate: now.toISOString(),
+            endDate: end.toISOString(),
         };
     }
 
     if (period === FINANCE_PERIODS.WEEK) {
-        const start = new Date(now);
+        const start = new Date(date);
 
         const day = start.getDay();
 
         const daysFromMonday =
-            day === 0 ? 6 : day - 1;
+            day === 0
+                ? 6
+                : day - 1;
 
         start.setDate(
-            start.getDate() - daysFromMonday
+            start.getDate() -
+                daysFromMonday
         );
 
         start.setHours(0, 0, 0, 0);
 
+        const end = new Date(start);
+
+        end.setDate(
+            end.getDate() + 7
+        );
+
         return {
             startDate: start.toISOString(),
-            endDate: now.toISOString(),
+            endDate: end.toISOString(),
         };
     }
 
     if (period === FINANCE_PERIODS.MONTH) {
         const start = new Date(
-            now.getFullYear(),
-            now.getMonth(),
+            date.getFullYear(),
+            date.getMonth(),
+            1
+        );
+
+        const end = new Date(
+            date.getFullYear(),
+            date.getMonth() + 1,
             1
         );
 
         return {
             startDate: start.toISOString(),
-            endDate: now.toISOString(),
+            endDate: end.toISOString(),
         };
     }
 
     if (period === FINANCE_PERIODS.YEAR) {
         const start = new Date(
-            now.getFullYear(),
+            date.getFullYear(),
+            0,
+            1
+        );
+
+        const end = new Date(
+            date.getFullYear() + 1,
             0,
             1
         );
 
         return {
             startDate: start.toISOString(),
-            endDate: now.toISOString(),
+            endDate: end.toISOString(),
         };
     }
 
