@@ -65,13 +65,22 @@ export default function ItemCard({
             </p>
           </div>
 
-          <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-              Revenue
-            </p>
+          {isCatalog && (
 
-            <p className="text-lg font-semibold">₱{revenue.toLocaleString()}</p>
-          </div>
+  <div>
+    <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+      Revenue
+    </p>
+
+
+<p className="text-lg font-semibold">
+  ₱{revenue.toLocaleString()}
+</p>
+
+
+  </div>
+)}
+
         </div>
 
         <div className="mt-auto space-y-4 pt-5">
