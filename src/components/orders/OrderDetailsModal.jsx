@@ -47,8 +47,22 @@ export default function OrderDetailsModal({
     onClose,
 }) {
     if (!order) {
+        
         return null;
     }
+console.log(
+    "Sale items:",
+    order.sale_items?.map((item) => ({
+        id: item.id,
+        sale_id: item.sale_id,
+        product_id: item.product_id,
+        product_name: item.product?.name,
+        sku: item.product?.sku,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        line_total: item.line_total,
+    }))
+);
 
     return (
         <Modal

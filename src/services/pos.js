@@ -549,55 +549,56 @@ export async function checkout({
     });
 
 try {
-    await createSalePayment({
-        saleId: sale.id,
-        paymentMethod,
-        amount: isDownpayment
-            ? normalizedDownpaymentAmount
-            : totals.total,
-        receivedBy: cashierId,
-        notes,
-    });
+await createSalePayment({
+saleId: sale.id,
+paymentMethod,
+amount: isDownpayment
+? normalizedDownpaymentAmount
+: totals.total,
+receivedBy: cashierId,
+notes,
+});
 
-    await createSaleItems(
-        sale.id,
-        cart
-    );
-        await createSaleItems(
-            sale.id,
-            cart
+
+await createSaleItems(
+    sale.id,
+    cart
+);
+
+for (const item of cart) {
+    const inventoryItems =
+        await resolveInventoryItemsForCartItem(
+            item
         );
 
-        for (
-            const item of cart
-        ) {
-            const inventoryItems =
-                await resolveInventoryItemsForCartItem(
-                    item
-                );
-
-        if (isDownpayment) {
-            await reserveInventoryItems(
-                inventoryItems,
-                cashierId,
-                sale.id
-            );
-        } else {
-            await sellInventoryItems(
-                inventoryItems,
-                cashierId,
-                sale.id
-            );
-        }
-        }
-    } catch (error) {
-        console.error(
-            "Checkout inventory processing failed:",
-            error
+    if (isDownpayment) {
+        await reserveInventoryItems(
+            inventoryItems,
+            cashierId,
+            sale.id
         );
-
-        throw error;
+    } else {
+        await sellInventoryItems(
+            inventoryItems,
+            cashierId,
+            sale.id
+        );
     }
+}
+
+
+} catch (error) {
+console.error(
+"Checkout inventory processing failed:",
+error
+);
+
+
+throw error;
+
+
+}
+
 
     return sale;
 }
