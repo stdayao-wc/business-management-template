@@ -34,6 +34,12 @@ import {
     getReceiptById,
 } from "@/services/receipts";
 
+import GetReceiptModal from "@/components/orders/GetReceiptModal";
+
+import {
+    getReceiptByNumber,
+} from "@/services/receipts";
+
 export default function OrdersPage() {
     const { user } = useAuth();
 
@@ -42,6 +48,9 @@ export default function OrdersPage() {
 
     const [selectedOrder, setSelectedOrder] =
         useState(null);
+
+    const [getReceiptOpen, setGetReceiptOpen] =
+        useState(false);
 
     const [receipt, setReceipt] =
         useState(null);
@@ -52,6 +61,8 @@ export default function OrdersPage() {
 
     const [updatingOrderId, setUpdatingOrderId] =
         useState(null);
+
+        
 
     const [page, setPage] = useState(1);
     const [pageSize] = useState(5);
@@ -308,6 +319,39 @@ export default function OrdersPage() {
         );
     }
 
+    async function handleGetReceipt(
+    receiptNumber
+) {
+    if (!receiptNumber || receiptLoading) {
+        return;
+    }
+
+    try {
+        setReceiptLoading(true);
+
+        const data =
+            await getReceiptByNumber(
+                receiptNumber
+            );
+
+        setReceipt(data);
+
+        setGetReceiptOpen(false);
+    } catch (error) {
+        console.error(
+            "Failed to get receipt:",
+            error
+        );
+
+        toast.error(
+            error?.message ||
+                "Receipt could not be found."
+        );
+    } finally {
+        setReceiptLoading(false);
+    }
+}
+
     async function handleBalancePaymentSuccess() {
         if (
             !balanceOrder?.id ||
@@ -407,7 +451,13 @@ export default function OrdersPage() {
                 period={period}
                 onChange={setPeriod}
             />
-
+<button
+    type="button"
+    onClick={() => setGetReceiptOpen(true)}
+    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+>
+    Get Receipt
+</button>
 <OrdersTable
     orders={orders}
     loading={loading}
@@ -467,6 +517,21 @@ export default function OrdersPage() {
                 onClose={() =>
                     setSelectedOrder(null)
                 }
+            />
+
+            <ReceiptModal
+                open={receipt !== null}
+                receipt={receipt}
+                onClose={() => setReceipt(null)}
+            />
+
+            <GetReceiptModal
+                open={getReceiptOpen}
+                loading={receiptLoading}
+                onClose={() =>
+                    setGetReceiptOpen(false)
+                }
+                onGetReceipt={handleGetReceipt}
             />
 
             <ReceiptModal
