@@ -28,6 +28,18 @@ import OrderPeriodFilter from "@/components/orders/OrderPeriodFilter";
 
 import { useAuth } from "@/context/AuthContext";
 
+import ReceiptModal from "@/components/pos/ReceiptModal";
+
+import {
+    getReceiptById,
+} from "@/services/receipts";
+
+import GetReceiptModal from "@/components/orders/GetReceiptModal";
+
+import {
+    getReceiptByNumber,
+} from "@/services/receipts";
+
 export default function OrdersPage() {
     const { user } = useAuth();
 
@@ -37,8 +49,20 @@ export default function OrdersPage() {
     const [selectedOrder, setSelectedOrder] =
         useState(null);
 
+    const [getReceiptOpen, setGetReceiptOpen] =
+        useState(false);
+
+    const [receipt, setReceipt] =
+        useState(null);
+
+    const [receiptLoading, setReceiptLoading] =
+        useState(false);
+        
+
     const [updatingOrderId, setUpdatingOrderId] =
         useState(null);
+
+        
 
     const [page, setPage] = useState(1);
     const [pageSize] = useState(5);
@@ -228,6 +252,33 @@ export default function OrdersPage() {
         }
     }
 
+    async function handleViewReceipt(orderId) {
+        if (!orderId || receiptLoading) {
+            return;
+        }
+
+        try {
+            setReceiptLoading(true);
+
+            const data =
+                await getReceiptById(orderId);
+
+            setReceipt(data);
+        } catch (error) {
+            console.error(
+                "Failed to load receipt:",
+                error
+            );
+
+            toast.error(
+                error?.message ||
+                    "Unable to load receipt."
+            );
+        } finally {
+            setReceiptLoading(false);
+        }
+    }
+
     function handleStatusUpdate(
         orderId,
         action
@@ -267,6 +318,39 @@ export default function OrdersPage() {
             action
         );
     }
+
+    async function handleGetReceipt(
+    receiptNumber
+) {
+    if (!receiptNumber || receiptLoading) {
+        return;
+    }
+
+    try {
+        setReceiptLoading(true);
+
+        const data =
+            await getReceiptByNumber(
+                receiptNumber
+            );
+
+        setReceipt(data);
+
+        setGetReceiptOpen(false);
+    } catch (error) {
+        console.error(
+            "Failed to get receipt:",
+            error
+        );
+
+        toast.error(
+            error?.message ||
+                "Receipt could not be found."
+        );
+    } finally {
+        setReceiptLoading(false);
+    }
+}
 
     async function handleBalancePaymentSuccess() {
         if (
@@ -367,52 +451,61 @@ export default function OrdersPage() {
                 period={period}
                 onChange={setPeriod}
             />
-
-            <OrdersTable
-                orders={orders}
-                loading={loading}
-                updatingOrderId={
-                    updatingOrderId
-                }
-                page={page}
-                pageSize={pageSize}
-                totalOrders={
-                    totalOrders
-                }
-                onPageChange={
-                    handlePageChange
-                }
-                onView={
-                    setSelectedOrder
-                }
-                onMarkReadyForPickup={(
-                    orderId
-                ) =>
-                    handleStatusUpdate(
-                        orderId,
-                        "ready_for_pickup"
-                    )
-                }
-                onMarkPickedUp={(
-                    orderId
-                ) =>
-                    handleStatusUpdate(
-                        orderId,
-                        "picked_up"
-                    )
-                }
-                onMarkShipped={(
-                    orderId
-                ) =>
-                    handleStatusUpdate(
-                        orderId,
-                        "shipped"
-                    )
-                }
-                onVoid={
-                    handleVoidOrder
-                }
-            />
+<button
+    type="button"
+    onClick={() => setGetReceiptOpen(true)}
+    className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+>
+    Get Receipt
+</button>
+<OrdersTable
+    orders={orders}
+    loading={loading}
+    updatingOrderId={
+        updatingOrderId
+    }
+    page={page}
+    pageSize={pageSize}
+    totalOrders={
+        totalOrders
+    }
+    onPageChange={
+        handlePageChange
+    }
+    onView={
+        setSelectedOrder
+    }
+    onViewReceipt={
+        handleViewReceipt
+    }
+    onMarkReadyForPickup={(
+        orderId
+    ) =>
+        handleStatusUpdate(
+            orderId,
+            "ready_for_pickup"
+        )
+    }
+    onMarkPickedUp={(
+        orderId
+    ) =>
+        handleStatusUpdate(
+            orderId,
+            "picked_up"
+        )
+    }
+    onMarkShipped={(
+        orderId
+    ) =>
+        handleStatusUpdate(
+            orderId,
+            "shipped"
+        )
+    }
+    onVoid={
+        handleVoidOrder
+    }
+/>
 
             <OrderDetailsModal
                 open={
@@ -424,6 +517,27 @@ export default function OrdersPage() {
                 onClose={() =>
                     setSelectedOrder(null)
                 }
+            />
+
+            <ReceiptModal
+                open={receipt !== null}
+                receipt={receipt}
+                onClose={() => setReceipt(null)}
+            />
+
+            <GetReceiptModal
+                open={getReceiptOpen}
+                loading={receiptLoading}
+                onClose={() =>
+                    setGetReceiptOpen(false)
+                }
+                onGetReceipt={handleGetReceipt}
+            />
+
+            <ReceiptModal
+                open={receipt !== null}
+                receipt={receipt}
+                onClose={() => setReceipt(null)}
             />
 
             <CollectBalanceModal

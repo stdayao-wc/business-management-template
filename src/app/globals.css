@@ -25,3 +25,194 @@ select,
 textarea {
   font: inherit;
 }
+
+.receipt-print {
+display: none;
+}
+
+@media print {
+@page {
+size: 57mm auto;
+margin: 0;
+}
+
+
+html,
+body {
+    width: 57mm !important;
+    min-width: 57mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+}
+
+body {
+    color: #000 !important;
+}
+
+/*
+ * Hide the application visually without removing it
+ * from the print layout tree.
+ */
+body > * {
+    visibility: hidden !important;
+}
+
+/*
+ * Show only the thermal receipt.
+ */
+.receipt-print {
+    display: block !important;
+    visibility: visible !important;
+
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+
+    width: 57mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+
+    margin: 0 !important;
+    padding: 0 !important;
+
+    background: #fff !important;
+
+    overflow: visible !important;
+
+    page-break-before: avoid !important;
+    page-break-after: avoid !important;
+}
+
+.receipt-print * {
+    visibility: visible !important;
+}
+
+.receipt-print-inner {
+    box-sizing: border-box;
+
+    width: 57mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+
+    margin: 0 !important;
+    padding: 4mm 3mm;
+
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10px;
+    line-height: 1.35;
+
+    color: #000 !important;
+    background: #fff !important;
+
+    overflow: visible !important;
+}
+
+.receipt-print-header {
+    margin-bottom: 3mm;
+
+    text-align: center;
+
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.receipt-print-title {
+    margin-bottom: 1mm;
+
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.receipt-print-divider {
+    width: 100%;
+    margin: 3mm 0;
+
+    border-top: 1px dashed #000;
+}
+
+.receipt-print-section {
+    margin: 2mm 0;
+
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.receipt-print-label {
+    margin-bottom: 1mm;
+    font-weight: 700;
+}
+
+.receipt-print-items {
+    width: 100%;
+}
+
+.receipt-print-item {
+    margin-bottom: 2.5mm;
+
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.receipt-print-item-name {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.receipt-print-item-row,
+.receipt-print-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+
+    width: 100%;
+    gap: 3mm;
+}
+
+.receipt-print-item-row span:last-child,
+.receipt-print-row span:last-child {
+    flex-shrink: 0;
+
+    text-align: right;
+    white-space: nowrap;
+}
+
+.receipt-print-totals,
+.receipt-print-payment {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2mm;
+
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+.receipt-print-total {
+    margin-top: 1mm;
+
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.receipt-print-emphasis {
+    font-weight: 700;
+}
+
+.receipt-print-address {
+    margin-top: 1mm;
+    overflow-wrap: anywhere;
+}
+
+.receipt-print-footer {
+    margin-top: 6mm;
+
+    text-align: center;
+    font-size: 9px;
+
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+
+}

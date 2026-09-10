@@ -12,7 +12,14 @@ import EmployeeDailySummaryModal from "@/components/pos/EmployeeDailySummaryModa
 
 import QRScanner from "@/components/scanner/QRScanner";
 
-import { getPOSProducts, checkout } from "@/services/pos";
+import {
+  getPOSProducts,
+  checkout,
+} from "@/services/pos";
+
+import {
+  getReceiptById,
+} from "@/services/receipts";
 
 import { getInventoryItemByCode } from "@/services/inventory";
 
@@ -104,41 +111,39 @@ export default function POSPage() {
   async function handleCheckout(payment) {
     try {
       const sale = await checkout({
-        cashierId: user.id,
-        cart,
+      cashierId: user.id,
+      cart,
 
-        shippingMethod: payment.shippingMethod,
+      shippingMethod: payment.shippingMethod,
 
-        customerName: payment.customerName,
+      customerName: payment.customerName,
 
-        customerPhone: payment.customerPhone,
+      customerPhone: payment.customerPhone,
 
-        shippingAddress: payment.shippingAddress,
+      shippingAddress: payment.shippingAddress,
 
-        paymentMethod: payment.paymentMethod,
+      paymentMethod: payment.paymentMethod,
 
-        discountAmount: payment.discountAmount,
+      discountAmount: payment.discountAmount,
 
-        shippingFee: payment.shippingFee,
+      shippingFee: payment.shippingFee,
 
-        isDownpayment: payment.isDownpayment,
+      isDownpayment: payment.isDownpayment,
 
-        amountReceived: payment.amountReceived,
+      amountReceived: payment.amountReceived,
 
-        changeGiven: payment.changeGiven,
+      changeGiven: payment.changeGiven,
 
-        notes: payment.notes,
-      });
+      notes: payment.notes,
+    });
 
-      setReceipt({
-        sale,
-        items: cart,
-        cashierName: [profile?.first_name, profile?.last_name]
-          .filter(Boolean)
-          .join(" "),
-      });
+    const receipt = await getReceiptById(
+      sale.id
+    );
 
-      clearCart();
+    setReceipt(receipt);
+
+    clearCart();
 
       await loadProducts();
 
