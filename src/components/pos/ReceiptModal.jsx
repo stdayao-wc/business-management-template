@@ -2,104 +2,80 @@
 
 import Modal from "@/components/common/Modal";
 
-export default function ReceiptModal({
-receipt,
-open,
-onClose,
-}) {
-if (!receipt) {
-return null;
-}
+export default function ReceiptModal({ receipt, open, onClose }) {
+  if (!receipt) {
+    return null;
+  }
 
+  const { sale, items, cashierName, paymentSummary } = receipt;
 
-const {
-    sale,
-    items,
-    cashierName,
-} = receipt;
+  const totalPaid = Number(paymentSummary?.totalPaid) || 0;
 
-const subtotal =
-    Number(sale.subtotal) || 0;
+  const remainingBalance = Number(paymentSummary?.remainingBalance) || 0;
 
-const discountAmount =
-    Number(sale.discount_amount) || 0;
+  const subtotal = Number(sale.subtotal) || 0;
 
-const shippingFee =
-    Number(sale.shipping_fee) || 0;
+  const discountAmount = Number(sale.discount_amount) || 0;
 
-const total =
-    Number(sale.total) || 0;
+  const shippingFee = Number(sale.shipping_fee) || 0;
 
-const amountReceived =
-    Number(sale.amount_received) || 0;
+  const total = Number(sale.total) || 0;
 
-const changeGiven =
-    Number(sale.change_given) || 0;
+  const amountReceived = Number(sale.amount_received) || 0;
 
-const isDownpayment =
-    Boolean(sale.is_downpayment);
+  const changeGiven = Number(sale.change_given) || 0;
 
-const downpaymentAmount =
-    Number(sale.downpayment_amount) || 0;
+  const isDownpayment = Boolean(sale.is_downpayment);
 
-const balanceDue = Math.max(
-    total - downpaymentAmount,
-    0
-);
+  const downpaymentAmount = Number(sale.downpayment_amount) || 0;
 
-function escapeHtml(value) {
+  const isFullyPaid = isDownpayment && remainingBalance <= 0;
+
+  const balanceDue = Math.max(total - downpaymentAmount, 0);
+
+  function escapeHtml(value) {
     return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
 
-function handlePrint() {
-    const printWindow = window.open(
-        "",
-        "_blank",
-        "width=400,height=600"
-    );
+  function handlePrint() {
+    const printWindow = window.open("", "_blank", "width=400,height=600");
 
     if (!printWindow) {
-        return;
+      return;
     }
 
     const itemRows = items
-        .map(
-            (item) => `
+      .map(
+        (item) => `
                 <div class="item">
                     <div class="item-name">
-                        ${escapeHtml(
-                            item.product?.name ||
-                                "Unknown Product"
-                        )}
+                        ${escapeHtml(item.product?.name || "Unknown Product")}
                     </div>
 
                     <div class="item-row">
                         <span>
                             ${item.quantity} × ₱${Number(
-                                item.unit_price
+                              item.unit_price,
                             ).toFixed(2)}
                         </span>
 
                         <span>
-                            ₱${Number(
-                                item.line_total
-                            ).toFixed(2)}
+                            ₱${Number(item.line_total).toFixed(2)}
                         </span>
                     </div>
                 </div>
-            `
-        )
-        .join("");
+            `,
+      )
+      .join("");
 
     const customerSection =
-        sale.customer_name ||
-        sale.customer_phone
-            ? `
+      sale.customer_name || sale.customer_phone
+        ? `
                 <div class="divider"></div>
 
                 <div class="section">
@@ -108,27 +84,23 @@ function handlePrint() {
                     </div>
 
                     ${
-                        sale.customer_name
-                            ? `<div>${escapeHtml(
-                                  sale.customer_name
-                              )}</div>`
-                            : ""
+                      sale.customer_name
+                        ? `<div>${escapeHtml(sale.customer_name)}</div>`
+                        : ""
                     }
 
                     ${
-                        sale.customer_phone
-                            ? `<div>${escapeHtml(
-                                  sale.customer_phone
-                              )}</div>`
-                            : ""
+                      sale.customer_phone
+                        ? `<div>${escapeHtml(sale.customer_phone)}</div>`
+                        : ""
                     }
                 </div>
             `
-            : "";
+        : "";
 
     const discountRow =
-        discountAmount > 0
-            ? `
+      discountAmount > 0
+        ? `
                 <div class="row">
                     <span>Discount</span>
                     <span>
@@ -136,11 +108,11 @@ function handlePrint() {
                     </span>
                 </div>
             `
-            : "";
+        : "";
 
     const shippingRow =
-        shippingFee > 0
-            ? `
+      shippingFee > 0
+        ? `
                 <div class="row">
                     <span>Shipping</span>
                     <span>
@@ -148,16 +120,14 @@ function handlePrint() {
                     </span>
                 </div>
             `
-            : "";
+        : "";
 
     const paymentSection = isDownpayment
-        ? `
+      ? `
             <div class="row">
                 <span>Payment</span>
                 <span>
-                    ${escapeHtml(
-                        sale.payment_method || ""
-                    )}
+                    ${escapeHtml(sale.payment_method || "")}
                 </span>
             </div>
 
@@ -175,13 +145,11 @@ function handlePrint() {
                 </span>
             </div>
         `
-        : `
+      : `
             <div class="row">
                 <span>Payment</span>
                 <span>
-                    ${escapeHtml(
-                        sale.payment_method || ""
-                    )}
+                    ${escapeHtml(sale.payment_method || "")}
                 </span>
             </div>
 
@@ -200,35 +168,30 @@ function handlePrint() {
             </div>
         `;
 
-    const fulfillmentSection =
-        sale.shipping_method
-            ? `
+    const fulfillmentSection = sale.shipping_method
+      ? `
                 <div class="divider"></div>
 
                 <div class="section">
                     <div class="row">
                         <span>Fulfillment</span>
                         <span>
-                            ${escapeHtml(
-                                sale.shipping_method
-                            )}
+                            ${escapeHtml(sale.shipping_method)}
                         </span>
                     </div>
 
                     ${
-                        sale.shipping_address
-                            ? `
+                      sale.shipping_address
+                        ? `
                                 <div class="address">
-                                    ${escapeHtml(
-                                        sale.shipping_address
-                                    )}
+                                    ${escapeHtml(sale.shipping_address)}
                                 </div>
                             `
-                            : ""
+                        : ""
                     }
                 </div>
             `
-            : "";
+      : "";
 
     printWindow.document.write(`
         <!DOCTYPE html>
@@ -238,9 +201,7 @@ function handlePrint() {
                 <meta charset="UTF-8" />
 
                 <title>
-                    ${escapeHtml(
-                        sale.receipt_number || "Receipt"
-                    )}
+                    ${escapeHtml(sale.receipt_number || "Receipt")}
                 </title>
 
                 <style>
@@ -372,24 +333,16 @@ function handlePrint() {
                         </div>
 
                         <div>
-                            ${escapeHtml(
-                                sale.receipt_number || ""
-                            )}
+                            ${escapeHtml(sale.receipt_number || "")}
                         </div>
 
                         <div>
-                            ${escapeHtml(
-                                formatDate(
-                                    sale.created_at
-                                )
-                            )}
+                            ${escapeHtml(formatDate(sale.created_at))}
                         </div>
 
                         <div>
                             Cashier:
-                            ${escapeHtml(
-                                cashierName || "Unknown"
-                            )}
+                            ${escapeHtml(cashierName || "Unknown")}
                         </div>
                     </div>
 
@@ -445,560 +398,362 @@ function handlePrint() {
     printWindow.focus();
 
     printWindow.onload = () => {
-        printWindow.print();
-        printWindow.close();
+      printWindow.print();
+      printWindow.close();
     };
-}
+  }
 
-function formatDate(value) {
+  function formatDate(value) {
     if (!value) {
-        return "";
+      return "";
     }
 
     return new Date(value).toLocaleString();
-}
+  }
 
-return (
+  return (
     <>
-        {/* On-screen receipt */}
+      {/* On-screen receipt */}
 
-        <div className="receipt-screen">
-            <Modal
-                open={open}
-                title="Sale Receipt"
-                onClose={onClose}
-            >
-                <div className="space-y-6">
+      <div className="receipt-screen">
+        <Modal open={open} title="Sale Receipt" onClose={onClose}>
+          <div className="space-y-6">
+            {/* Receipt Header */}
 
-                    {/* Receipt Header */}
+            <div className="text-center">
+              <p className="text-lg font-semibold">Receipt</p>
 
-                    <div className="text-center">
-                        <p className="text-lg font-semibold">
-                            Receipt
-                        </p>
+              <p className="text-sm text-gray-500">{sale.receipt_number}</p>
 
-                        <p className="text-sm text-gray-500">
-                            {sale.receipt_number}
-                        </p>
+              <p className="text-sm text-gray-500">
+                {formatDate(sale.created_at)}
+              </p>
 
-                        <p className="text-sm text-gray-500">
-                            {formatDate(
-                                sale.created_at
-                            )}
-                        </p>
-
-                        <p className="text-sm text-gray-500">
-                            Cashier:{" "}
-                            {cashierName ||
-                                "Unknown"}
-                        </p>
-                    </div>
-
-                    {/* Customer */}
-
-                    {(sale.customer_name ||
-                        sale.customer_phone) && (
-                        <div className="space-y-1 border-t pt-4">
-                            <p className="font-medium">
-                                Customer
-                            </p>
-
-                            {sale.customer_name && (
-                                <p className="text-sm">
-                                    {sale.customer_name}
-                                </p>
-                            )}
-
-                            {sale.customer_phone && (
-                                <p className="text-sm text-gray-500">
-                                    {sale.customer_phone}
-                                </p>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Items */}
-
-                    <div className="space-y-3 border-y py-4">
-                        {items.map((item) => (
-                            <div
-                                key={item.id}
-                                className="flex justify-between gap-4"
-                            >
-                                <div className="min-w-0">
-                                    <p className="font-medium">
-                                        {item.product?.name ||
-                                            "Unknown Product"}
-                                    </p>
-
-                                    <p className="text-sm text-gray-500">
-                                        {item.quantity} × ₱
-                                        {Number(
-                                            item.unit_price
-                                        ).toFixed(2)}
-                                    </p>
-                                </div>
-
-                                <span className="shrink-0 font-medium">
-                                    ₱
-                                    {Number(
-                                        item.line_total
-                                    ).toFixed(2)}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Totals */}
-
-                    <div className="space-y-2">
-                        <div className="flex justify-between">
-                            <span>Subtotal</span>
-
-                            <span>
-                                ₱
-                                {subtotal.toFixed(
-                                    2
-                                )}
-                            </span>
-                        </div>
-
-                        {discountAmount > 0 && (
-                            <div className="flex justify-between">
-                                <span>
-                                    Discount
-                                </span>
-
-                                <span>
-                                    -₱
-                                    {discountAmount.toFixed(
-                                        2
-                                    )}
-                                </span>
-                            </div>
-                        )}
-
-                        {shippingFee > 0 && (
-                            <div className="flex justify-between">
-                                <span>
-                                    Shipping
-                                </span>
-
-                                <span>
-                                    ₱
-                                    {shippingFee.toFixed(
-                                        2
-                                    )}
-                                </span>
-                            </div>
-                        )}
-
-                        <div className="flex justify-between text-lg font-bold">
-                            <span>Total</span>
-
-                            <span>
-                                ₱
-                                {total.toFixed(
-                                    2
-                                )}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Payment */}
-
-                    <div className="space-y-2 border-t pt-4">
-                        <div className="flex justify-between">
-                            <span>
-                                Payment
-                            </span>
-
-                            <span>
-                                {sale.payment_method}
-                            </span>
-                        </div>
-
-                        {isDownpayment ? (
-                            <>
-                                <div className="flex justify-between font-semibold">
-                                    <span>
-                                        Downpayment
-                                    </span>
-
-                                    <span>
-                                        ₱
-                                        {downpaymentAmount.toFixed(
-                                            2
-                                        )}
-                                    </span>
-                                </div>
-
-                                <div className="flex justify-between font-semibold">
-                                    <span>
-                                        Balance Due
-                                    </span>
-
-                                    <span>
-                                        ₱
-                                        {balanceDue.toFixed(
-                                            2
-                                        )}
-                                    </span>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <div className="flex justify-between">
-                                    <span>
-                                        Amount Received
-                                    </span>
-
-                                    <span>
-                                        ₱
-                                        {amountReceived.toFixed(
-                                            2
-                                        )}
-                                    </span>
-                                </div>
-
-                                <div className="flex justify-between font-semibold">
-                                    <span>
-                                        Change
-                                    </span>
-
-                                    <span>
-                                        ₱
-                                        {changeGiven.toFixed(
-                                            2
-                                        )}
-                                    </span>
-                                </div>
-                            </>
-                        )}
-                    </div>
-
-                    {/* Shipping */}
-
-                    {sale.shipping_method && (
-                        <div className="space-y-1 border-t pt-4">
-                            <div className="flex justify-between">
-                                <span>
-                                    Fulfillment
-                                </span>
-
-                                <span>
-                                    {
-                                        sale.shipping_method
-                                    }
-                                </span>
-                            </div>
-
-                            {sale.shipping_address && (
-                                <p className="text-sm text-gray-500">
-                                    {
-                                        sale.shipping_address
-                                    }
-                                </p>
-                            )}
-                        </div>
-                    )}
-
-                    {/* Actions */}
-
-                    <div className="flex gap-3">
-                        <button
-                            type="button"
-                            onClick={handlePrint}
-                            className="flex-1 rounded-lg border border-gray-300 px-4 py-3 font-medium transition hover:bg-gray-50"
-                        >
-                            Print Receipt
-                        </button>
-
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700"
-                        >
-                            Done
-                        </button>
-                    </div>
-                </div>
-            </Modal>
-        </div>
-
-        {/* Thermal printer receipt */}
-
-        <div className="receipt-print">
-            <div className="receipt-print-inner">
-
-                {/* Header */}
-
-                <div className="receipt-print-header">
-                    <div className="receipt-print-title">
-                        RECEIPT
-                    </div>
-
-                    <div>
-                        {sale.receipt_number}
-                    </div>
-
-                    <div>
-                        {formatDate(
-                            sale.created_at
-                        )}
-                    </div>
-
-                    <div>
-                        Cashier:{" "}
-                        {cashierName ||
-                            "Unknown"}
-                    </div>
-                </div>
-
-                <div className="receipt-print-divider" />
-
-                {/* Customer */}
-
-                {(sale.customer_name ||
-                    sale.customer_phone) && (
-                    <>
-                        <div className="receipt-print-section">
-                            <div className="receipt-print-label">
-                                CUSTOMER
-                            </div>
-
-                            {sale.customer_name && (
-                                <div>
-                                    {
-                                        sale.customer_name
-                                    }
-                                </div>
-                            )}
-
-                            {sale.customer_phone && (
-                                <div>
-                                    {
-                                        sale.customer_phone
-                                    }
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="receipt-print-divider" />
-                    </>
-                )}
-
-                {/* Items */}
-
-                <div className="receipt-print-items">
-                    {items.map((item) => (
-                        <div
-                            key={item.id}
-                            className="receipt-print-item"
-                        >
-                            <div className="receipt-print-item-name">
-                                {item.product?.name ||
-                                    "Unknown Product"}
-                            </div>
-
-                            <div className="receipt-print-item-row">
-                                <span>
-                                    {item.quantity} × ₱
-                                    {Number(
-                                        item.unit_price
-                                    ).toFixed(
-                                        2
-                                    )}
-                                </span>
-
-                                <span>
-                                    ₱
-                                    {Number(
-                                        item.line_total
-                                    ).toFixed(
-                                        2
-                                    )}
-                                </span>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-
-                <div className="receipt-print-divider" />
-
-                {/* Totals */}
-
-                <div className="receipt-print-totals">
-                    <div className="receipt-print-row">
-                        <span>
-                            Subtotal
-                        </span>
-
-                        <span>
-                            ₱
-                            {subtotal.toFixed(
-                                2
-                            )}
-                        </span>
-                    </div>
-
-                    {discountAmount > 0 && (
-                        <div className="receipt-print-row">
-                            <span>
-                                Discount
-                            </span>
-
-                            <span>
-                                -₱
-                                {discountAmount.toFixed(
-                                    2
-                                )}
-                            </span>
-                        </div>
-                    )}
-
-                    {shippingFee > 0 && (
-                        <div className="receipt-print-row">
-                            <span>
-                                Shipping
-                            </span>
-
-                            <span>
-                                ₱
-                                {shippingFee.toFixed(
-                                    2
-                                )}
-                            </span>
-                        </div>
-                    )}
-
-                    <div className="receipt-print-row receipt-print-total">
-                        <span>
-                            TOTAL
-                        </span>
-
-                        <span>
-                            ₱
-                            {total.toFixed(
-                                2
-                            )}
-                        </span>
-                    </div>
-                </div>
-
-                <div className="receipt-print-divider" />
-
-                {/* Payment */}
-
-                <div className="receipt-print-payment">
-                    <div className="receipt-print-row">
-                        <span>
-                            Payment
-                        </span>
-
-                        <span>
-                            {sale.payment_method}
-                        </span>
-                    </div>
-
-                    {isDownpayment ? (
-                        <>
-                            <div className="receipt-print-row">
-                                <span>
-                                    Downpayment
-                                </span>
-
-                                <span>
-                                    ₱
-                                    {downpaymentAmount.toFixed(
-                                        2
-                                    )}
-                                </span>
-                            </div>
-
-                            <div className="receipt-print-row receipt-print-emphasis">
-                                <span>
-                                    Balance Due
-                                </span>
-
-                                <span>
-                                    ₱
-                                    {balanceDue.toFixed(
-                                        2
-                                    )}
-                                </span>
-                            </div>
-                        </>
-                    ) : (
-                        <>
-                            <div className="receipt-print-row">
-                                <span>
-                                    Received
-                                </span>
-
-                                <span>
-                                    ₱
-                                    {amountReceived.toFixed(
-                                        2
-                                    )}
-                                </span>
-                            </div>
-
-                            <div className="receipt-print-row receipt-print-emphasis">
-                                <span>
-                                    Change
-                                </span>
-
-                                <span>
-                                    ₱
-                                    {changeGiven.toFixed(
-                                        2
-                                    )}
-                                </span>
-                            </div>
-                        </>
-                    )}
-                </div>
-
-                {/* Shipping */}
-
-                {sale.shipping_method && (
-                    <>
-                        <div className="receipt-print-divider" />
-
-                        <div className="receipt-print-section">
-                            <div className="receipt-print-row">
-                                <span>
-                                    Fulfillment
-                                </span>
-
-                                <span>
-                                    {
-                                        sale.shipping_method
-                                    }
-                                </span>
-                            </div>
-
-                            {sale.shipping_address && (
-                                <div className="receipt-print-address">
-                                    {
-                                        sale.shipping_address
-                                    }
-                                </div>
-                            )}
-                        </div>
-                    </>
-                )}
-
-                {/* Footer */}
-
-                <div className="receipt-print-footer">
-                    Thank you for your purchase.
-                </div>
+              <p className="text-sm text-gray-500">
+                Cashier: {cashierName || "Unknown"}
+              </p>
             </div>
+
+            {/* Customer */}
+
+            {(sale.customer_name || sale.customer_phone) && (
+              <div className="space-y-1 border-t pt-4">
+                <p className="font-medium">Customer</p>
+
+                {sale.customer_name && (
+                  <p className="text-sm">{sale.customer_name}</p>
+                )}
+
+                {sale.customer_phone && (
+                  <p className="text-sm text-gray-500">{sale.customer_phone}</p>
+                )}
+              </div>
+            )}
+
+            {/* Items */}
+
+            <div className="space-y-3 border-y py-4">
+              {items.map((item) => (
+                <div key={item.id} className="flex justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="font-medium">
+                      {item.product?.name || "Unknown Product"}
+                    </p>
+
+                    <p className="text-sm text-gray-500">
+                      {item.quantity} × ₱{Number(item.unit_price).toFixed(2)}
+                    </p>
+                  </div>
+
+                  <span className="shrink-0 font-medium">
+                    ₱{Number(item.line_total).toFixed(2)}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Totals */}
+
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span>Subtotal</span>
+
+                <span>₱{subtotal.toFixed(2)}</span>
+              </div>
+
+              {discountAmount > 0 && (
+                <div className="flex justify-between">
+                  <span>Discount</span>
+
+                  <span>
+                    -₱
+                    {discountAmount.toFixed(2)}
+                  </span>
+                </div>
+              )}
+
+              {shippingFee > 0 && (
+                <div className="flex justify-between">
+                  <span>Shipping</span>
+
+                  <span>₱{shippingFee.toFixed(2)}</span>
+                </div>
+              )}
+
+              <div className="flex justify-between text-lg font-bold">
+                <span>Total</span>
+
+                <span>₱{total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Payment */}
+
+            <div className="space-y-2 border-t pt-4">
+              <div className="flex justify-between">
+                <span>Payment</span>
+
+                <span>{sale.payment_method}</span>
+              </div>
+
+              {isDownpayment ? (
+                <>
+                  <div className="flex justify-between font-semibold">
+                    <span>Downpayment</span>
+
+                    <span>₱{downpaymentAmount.toFixed(2)}</span>
+                  </div>
+
+                  <div className="flex justify-between font-semibold">
+                    <span>{isFullyPaid ? "Total Paid" : "Balance Due"}</span>
+
+                    <span>
+                      ₱{(isFullyPaid ? totalPaid : remainingBalance).toFixed(2)}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex justify-between">
+                    <span>Amount Received</span>
+
+                    <span>₱{amountReceived.toFixed(2)}</span>
+                  </div>
+
+                  <div className="flex justify-between font-semibold">
+                    <span>Change</span>
+
+                    <span>₱{changeGiven.toFixed(2)}</span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Shipping */}
+
+            {sale.shipping_method && (
+              <div className="space-y-1 border-t pt-4">
+                <div className="flex justify-between">
+                  <span>Fulfillment</span>
+
+                  <span>{sale.shipping_method}</span>
+                </div>
+
+                {sale.shipping_address && (
+                  <p className="text-sm text-gray-500">
+                    {sale.shipping_address}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Actions */}
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handlePrint}
+                className="flex-1 rounded-lg border border-gray-300 px-4 py-3 font-medium transition hover:bg-gray-50"
+              >
+                Print Receipt
+              </button>
+
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 rounded-lg bg-blue-600 px-4 py-3 font-medium text-white transition hover:bg-blue-700"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </Modal>
+      </div>
+
+      {/* Thermal printer receipt */}
+
+      <div className="receipt-print">
+        <div className="receipt-print-inner">
+          {/* Header */}
+
+          <div className="receipt-print-header">
+            <div className="receipt-print-title">RECEIPT</div>
+
+            <div>{sale.receipt_number}</div>
+
+            <div>{formatDate(sale.created_at)}</div>
+
+            <div>Cashier: {cashierName || "Unknown"}</div>
+          </div>
+
+          <div className="receipt-print-divider" />
+
+          {/* Customer */}
+
+          {(sale.customer_name || sale.customer_phone) && (
+            <>
+              <div className="receipt-print-section">
+                <div className="receipt-print-label">CUSTOMER</div>
+
+                {sale.customer_name && <div>{sale.customer_name}</div>}
+
+                {sale.customer_phone && <div>{sale.customer_phone}</div>}
+              </div>
+
+              <div className="receipt-print-divider" />
+            </>
+          )}
+
+          {/* Items */}
+
+          <div className="receipt-print-items">
+            {items.map((item) => (
+              <div key={item.id} className="receipt-print-item">
+                <div className="receipt-print-item-name">
+                  {item.product?.name || "Unknown Product"}
+                </div>
+
+                <div className="receipt-print-item-row">
+                  <span>
+                    {item.quantity} × ₱{Number(item.unit_price).toFixed(2)}
+                  </span>
+
+                  <span>₱{Number(item.line_total).toFixed(2)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="receipt-print-divider" />
+
+          {/* Totals */}
+
+          <div className="receipt-print-totals">
+            <div className="receipt-print-row">
+              <span>Subtotal</span>
+
+              <span>₱{subtotal.toFixed(2)}</span>
+            </div>
+
+            {discountAmount > 0 && (
+              <div className="receipt-print-row">
+                <span>Discount</span>
+
+                <span>
+                  -₱
+                  {discountAmount.toFixed(2)}
+                </span>
+              </div>
+            )}
+
+            {shippingFee > 0 && (
+              <div className="receipt-print-row">
+                <span>Shipping</span>
+
+                <span>₱{shippingFee.toFixed(2)}</span>
+              </div>
+            )}
+
+            <div className="receipt-print-row receipt-print-total">
+              <span>TOTAL</span>
+
+              <span>₱{total.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div className="receipt-print-divider" />
+
+          {/* Payment */}
+
+          <div className="receipt-print-payment">
+            <div className="receipt-print-row">
+              <span>Payment</span>
+
+              <span>{sale.payment_method}</span>
+            </div>
+
+            {isDownpayment ? (
+              <>
+                <div className="receipt-print-row">
+                  <span>Downpayment</span>
+
+                  <span>₱{downpaymentAmount.toFixed(2)}</span>
+                </div>
+
+                <div className="receipt-print-row receipt-print-emphasis">
+                  <span>{isFullyPaid ? "Total Paid" : "Balance Due"}</span>
+
+                  <span>
+                    ₱{(isFullyPaid ? totalPaid : remainingBalance).toFixed(2)}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="receipt-print-row">
+                  <span>Received</span>
+
+                  <span>₱{amountReceived.toFixed(2)}</span>
+                </div>
+
+                <div className="receipt-print-row receipt-print-emphasis">
+                  <span>Change</span>
+
+                  <span>₱{changeGiven.toFixed(2)}</span>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Shipping */}
+
+          {sale.shipping_method && (
+            <>
+              <div className="receipt-print-divider" />
+
+              <div className="receipt-print-section">
+                <div className="receipt-print-row">
+                  <span>Fulfillment</span>
+
+                  <span>{sale.shipping_method}</span>
+                </div>
+
+                {sale.shipping_address && (
+                  <div className="receipt-print-address">
+                    {sale.shipping_address}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Footer */}
+
+          <div className="receipt-print-footer">
+            Thank you for your purchase.
+          </div>
         </div>
+      </div>
     </>
-);
-
-
+  );
 }
