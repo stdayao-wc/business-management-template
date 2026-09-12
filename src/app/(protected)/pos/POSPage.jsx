@@ -12,14 +12,9 @@ import EmployeeDailySummaryModal from "@/components/pos/EmployeeDailySummaryModa
 
 import QRScanner from "@/components/scanner/QRScanner";
 
-import {
-  getPOSProducts,
-  checkout,
-} from "@/services/pos";
+import { getPOSProducts, checkout } from "@/services/pos";
 
-import {
-  getReceiptById,
-} from "@/services/receipts";
+import { getReceiptById } from "@/services/receipts";
 
 import { getInventoryItemByCode } from "@/services/inventory";
 
@@ -111,39 +106,37 @@ export default function POSPage() {
   async function handleCheckout(payment) {
     try {
       const sale = await checkout({
-      cashierId: user.id,
-      cart,
+        cashierId: user.id,
+        cart,
 
-      shippingMethod: payment.shippingMethod,
+        shippingMethod: payment.shippingMethod,
 
-      customerName: payment.customerName,
+        customerName: payment.customerName,
 
-      customerPhone: payment.customerPhone,
+        customerPhone: payment.customerPhone,
 
-      shippingAddress: payment.shippingAddress,
+        shippingAddress: payment.shippingAddress,
 
-      paymentMethod: payment.paymentMethod,
+        paymentMethod: payment.paymentMethod,
 
-      discountAmount: payment.discountAmount,
+        discountAmount: payment.discountAmount,
 
-      shippingFee: payment.shippingFee,
+        shippingFee: payment.shippingFee,
 
-      isDownpayment: payment.isDownpayment,
+        isDownpayment: payment.isDownpayment,
 
-      amountReceived: payment.amountReceived,
+        amountReceived: payment.amountReceived,
 
-      changeGiven: payment.changeGiven,
+        changeGiven: payment.changeGiven,
 
-      notes: payment.notes,
-    });
+        notes: payment.notes,
+      });
 
-    const receipt = await getReceiptById(
-      sale.id
-    );
+      const receipt = await getReceiptById(sale.id);
 
-    setReceipt(receipt);
+      setReceipt(receipt);
 
-    clearCart();
+      clearCart();
 
       await loadProducts();
 
@@ -361,37 +354,35 @@ export default function POSPage() {
   return (
     <div className="space-y-6">
       {/* Daily Payment Summary */}
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-xl border bg-white p-5">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="rounded-xl border bg-white p-3">
           <p className="text-sm text-gray-500">Cash</p>
 
-          <p className="mt-2 text-2xl font-semibold">
+          <p className="mt-1 text-xl font-semibold">
             ₱{paymentSummary.cash.toFixed(2)}
           </p>
         </div>
 
-        <div className="rounded-xl border bg-white p-5">
+        <div className="rounded-xl border bg-white p-3">
           <p className="text-sm text-gray-500">E-Wallet</p>
 
-          <p className="mt-2 text-2xl font-semibold">
+          <p className="mt-1 text-xl font-semibold">
             ₱{paymentSummary.eWallet.toFixed(2)}
           </p>
         </div>
 
-        <div className="rounded-xl border bg-white p-5">
+        <div className="rounded-xl border bg-white p-3">
           <p className="text-sm text-gray-500">Online Banking</p>
 
-          <p className="mt-2 text-2xl font-semibold">
+          <p className="mt-1 text-xl font-semibold">
             ₱{paymentSummary.onlineBanking.toFixed(2)}
           </p>
         </div>
       </div>
 
       {/* POS */}
-
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="space-y-4 lg:col-span-8">
+        <div className="order-last space-y-4 lg:order-first lg:col-span-8">
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
             <div className="space-y-4 lg:col-span-8">
               <div className="flex items-center justify-between">
@@ -446,7 +437,7 @@ export default function POSPage() {
           </div>
         </div>
 
-        <div className="lg:col-span-4">
+        <div className="order-first lg:order-last lg:col-span-4">
           <CartPanel
             cart={cart}
             totals={totals}

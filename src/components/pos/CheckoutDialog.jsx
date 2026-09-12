@@ -278,22 +278,26 @@ export default function CheckoutDialog({ open, totals, onClose, onConfirm }) {
 
           {/* Shipping Fee */}
 
-          <div>
-            <label className="mb-1 block text-sm font-medium">
-              Shipping Fee
-            </label>
+          {/* Shipping Fee */}
 
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={shippingFee}
-              onChange={(e) => setShippingFee(e.target.value)}
-              disabled={processing || shippingMethod === "PICKUP"}
-              className="w-full rounded-lg border px-3 py-2"
-              placeholder="Enter shipping fee"
-            />
-          </div>
+          {shippingMethod !== "PICKUP" && (
+            <div>
+              <label className="mb-1 block text-sm font-medium">
+                Shipping Fee
+              </label>
+
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={shippingFee}
+                onChange={(e) => setShippingFee(e.target.value)}
+                disabled={processing}
+                className="w-full rounded-lg border px-3 py-2"
+                placeholder="Enter shipping fee"
+              />
+            </div>
+          )}
 
           {/* Shipping Method */}
 

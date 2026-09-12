@@ -7,188 +7,214 @@ import ItemCard from "@/components/inventory/ItemCard";
 import ItemGrid from "@/components/inventory/ItemGrid";
 import InventoryTransactionDialog from "@/components/inventory/InventoryTransactionDialog";
 import InventoryItemsModal from "@/components/inventory/InventoryItemsModal";
-import {
-    getInventoryCounts,
-} from "@/services/inventory";
 
 import {
-    getProducts,
-} from "@/services/products";
+getInventoryCounts,
+getInventoryItemByCode,
+} from "@/services/inventory";
+
+import { getProducts } from "@/services/products";
+
 import ProductSearch from "@/components/pos/ProductSearch";
-
 import QRScanner from "@/components/scanner/QRScanner";
-
 import InventoryItemDetailsModal from "@/components/inventory/InventoryItemDetailsModal";
-
-import {
-    getInventoryItemByCode,
-} from "@/services/inventory";
 
 import { toast } from "sonner";
 
 export default function InventoryPage() {
-    const [products, setProducts] = useState([]);
+const [products, setProducts] = useState([]);
 
-    const [
-        isTransactionDialogOpen,
-        setIsTransactionDialogOpen,
-    ] = useState(false);
 
-    const [transactionType, setTransactionType] =
-        useState(null);
+const [isLoading, setIsLoading] = useState(true);
 
-    const [selectedProduct, setSelectedProduct] = useState(null);
+const [
+    isTransactionDialogOpen,
+    setIsTransactionDialogOpen,
+] = useState(false);
 
-    const [searchTerm, setSearchTerm] = useState("");
-    const [
-        isItemsModalOpen,
-        setIsItemsModalOpen,
-    ] = useState(false);
+const [transactionType, setTransactionType] =
+    useState(null);
 
-    const [
-        selectedInventoryProduct,
-        setSelectedInventoryProduct,
-    ] = useState(null);
+const [selectedProduct, setSelectedProduct] =
+    useState(null);
 
-    const filteredProducts = useMemo(() => {
-        const query = searchTerm.trim().toLowerCase();
+const [searchTerm, setSearchTerm] = useState("");
 
-        if (!query) {
-            return products;
-        }
+const [
+    isItemsModalOpen,
+    setIsItemsModalOpen,
+] = useState(false);
 
-        return products.filter((product) => {
-            return (
-                product.name?.toLowerCase().includes(query) ||
-                product.sku?.toLowerCase().includes(query) ||
-                product.barcode?.toLowerCase().includes(query)
-            );
-        });
-    }, [products, searchTerm]);
+const [
+    selectedInventoryProduct,
+    setSelectedInventoryProduct,
+] = useState(null);
 
-    const [scannerOpen, setScannerOpen] =
-        useState(false);
+const [scannerOpen, setScannerOpen] =
+    useState(false);
 
-    const [scannedItem, setScannedItem] =
-        useState(null);
+const [scannedItem, setScannedItem] =
+    useState(null);
 
-    const [detailsOpen, setDetailsOpen] =
-        useState(false);
+const [detailsOpen, setDetailsOpen] =
+    useState(false);
 
-    async function loadInventory() {
-        try {
-            const products = await getProducts();
+const filteredProducts = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
 
-            const counts = await getInventoryCounts(
-                products.map((product) => product.id)
-            );
-
-            setProducts(
-                products.map((product) => ({
-                    ...product,
-                    stock: counts[product.id] ?? 0,
-                }))
-            );
-        } catch (err) {
-            console.error(err);
-        }
+    if (!query) {
+        return products;
     }
 
-    function openTransaction(product, type) {
-        setSelectedProduct(product);
-        setTransactionType(type);
-        setIsTransactionDialogOpen(true);
+    return products.filter((product) => {
+        return (
+            product.name?.toLowerCase().includes(query) ||
+            product.sku?.toLowerCase().includes(query) ||
+            product.barcode?.toLowerCase().includes(query)
+        );
+    });
+}, [products, searchTerm]);
+
+async function loadInventory() {
+    setIsLoading(true);
+
+    try {
+        const products = await getProducts();
+
+        const counts = await getInventoryCounts(
+            products.map((product) => product.id)
+        );
+
+        setProducts(
+            products.map((product) => ({
+                ...product,
+                stock: counts[product.id] ?? 0,
+            }))
+        );
+    } catch (err) {
+        console.error(err);
+
+        toast.error("Unable to load inventory.");
+    } finally {
+        setIsLoading(false);
     }
+}
 
-    function handleCloseTransactionDialog() {
-        setSelectedProduct(null);
-        setTransactionType(null);
-        setIsTransactionDialogOpen(false);
-    }
+function openTransaction(product, type) {
+    setSelectedProduct(product);
+    setTransactionType(type);
+    setIsTransactionDialogOpen(true);
+}
 
-    function handleReceiveStock(product) {
-        openTransaction(product, INVENTORY_TRANSACTION_TYPES.RECEIVE);
-    }
+function handleCloseTransactionDialog() {
+    setSelectedProduct(null);
+    setTransactionType(null);
+    setIsTransactionDialogOpen(false);
+}
 
-    function handleDamageStock(product) {
-        openTransaction(product, INVENTORY_TRANSACTION_TYPES.DAMAGE);
-    }
-    useEffect(() => {
-        loadInventory();
-    }, []);
+function handleReceiveStock(product) {
+    openTransaction(
+        product,
+        INVENTORY_TRANSACTION_TYPES.RECEIVE
+    );
+}
 
-    function handleViewItems(product) {
-        setSelectedInventoryProduct(product);
-        setIsItemsModalOpen(true);
-    }
+function handleDamageStock(product) {
+    openTransaction(
+        product,
+        INVENTORY_TRANSACTION_TYPES.DAMAGE
+    );
+}
 
-    function handleCloseItemsModal() {
-        setSelectedInventoryProduct(null);
-        setIsItemsModalOpen(false);
-    }
+useEffect(() => {
+    loadInventory();
+}, []);
 
-    async function handleScan(itemCode) {
-        try {
-            const item =
-                await getInventoryItemByCode(
-                    itemCode
-                );
+function handleViewItems(product) {
+    setSelectedInventoryProduct(product);
+    setIsItemsModalOpen(true);
+}
 
-            if (!item) {
-                toast.error(
-                    `Item ${itemCode} was not found.`
-                );
+function handleCloseItemsModal() {
+    setSelectedInventoryProduct(null);
+    setIsItemsModalOpen(false);
+}
 
-                return;
-            }
+async function handleScan(itemCode) {
+    try {
+        const item =
+            await getInventoryItemByCode(itemCode);
 
-            setScannedItem(item);
-            setScannerOpen(false);
-            setDetailsOpen(true);
-        } catch (error) {
-            console.error(
-                "QR scan failed:",
-                error
-            );
-
+        if (!item) {
             toast.error(
-                error?.message ||
-                "Unable to find inventory item."
+                `Item ${itemCode} was not found.`
             );
+
+            return;
         }
+
+        setScannedItem(item);
+        setScannerOpen(false);
+        setDetailsOpen(true);
+    } catch (error) {
+        console.error(
+            "QR scan failed:",
+            error
+        );
+
+        toast.error(
+            error?.message ||
+            "Unable to find inventory item."
+        );
     }
+}
 
-    return (
-        <div className="space-y-10">
+return (
+    <div className="space-y-10">
 
-            {/* Inventory Header */}
+        {/* Inventory Header */}
 
-            <div className="rounded-xl bg-white px-10 py-8 shadow-sm">
+        <div className="rounded-xl bg-white px-10 py-8 shadow-sm">
 
-                <h1 className="text-4xl font-bold">
-                    Inventory
-                </h1>
+            <h1 className="text-4xl font-bold">
+                Inventory
+            </h1>
 
-                <div className="grid gap-3 md:grid-cols-[1fr_auto]">
-                    <ProductSearch
-                        value={searchTerm}
-                        onChange={setSearchTerm}
-                    />
+            <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+                <ProductSearch
+                    value={searchTerm}
+                    onChange={setSearchTerm}
+                />
 
-                    <button
-                        type="button"
-                        onClick={() =>
-                            setScannerOpen(true)
-                        }
-                        className="rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
-                    >
-                        Scan QR
-                    </button>
-                </div>
-
+                <button
+                    type="button"
+                    onClick={() =>
+                        setScannerOpen(true)
+                    }
+                    className="rounded-xl bg-blue-600 px-5 py-3 font-medium text-white transition hover:bg-blue-700"
+                >
+                    Scan QR
+                </button>
             </div>
-            {/* Product Grid */}
 
+        </div>
+
+        {/* Product Grid */}
+
+        {isLoading ? (
+            <div className="flex min-h-[300px] items-center justify-center rounded-xl bg-white shadow-sm">
+                <div className="flex flex-col items-center gap-3">
+                    <div
+                        className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"
+                        aria-label="Loading inventory"
+                        role="status"
+                    />
+                    <p className="text-sm text-gray-500">
+                        Loading inventory...
+                    </p>
+                </div>
+            </div>
+        ) : filteredProducts.length > 0 ? (
             <ItemGrid>
                 {filteredProducts.map((product) => (
                     <ItemCard
@@ -201,39 +227,50 @@ export default function InventoryPage() {
                     />
                 ))}
             </ItemGrid>
-<InventoryTransactionDialog
-    open={isTransactionDialogOpen}
-    product={selectedProduct}
-    type={transactionType}
-    onClose={handleCloseTransactionDialog}
-    onSuccess={loadInventory}
-/>
+        ) : (
+            <div className="rounded-xl bg-white px-4 py-10 text-center shadow-sm sm:px-10 sm:py-12">
+                <p className="text-gray-500">
+                    No products found.
+                </p>
+            </div>
+        )}
 
-<InventoryItemsModal
-    open={isItemsModalOpen}
-    product={selectedInventoryProduct}
-    onClose={handleCloseItemsModal}
-/>
+        <InventoryTransactionDialog
+            open={isTransactionDialogOpen}
+            product={selectedProduct}
+            type={transactionType}
+            onClose={handleCloseTransactionDialog}
+            onSuccess={loadInventory}
+        />
 
-<QRScanner
-    open={scannerOpen}
-    onScan={handleScan}
-    onClose={() =>
-        setScannerOpen(false)
-    }
-/>
+        <InventoryItemsModal
+            open={isItemsModalOpen}
+            product={selectedInventoryProduct}
+            onClose={handleCloseItemsModal}
+        />
 
-<InventoryItemDetailsModal
-    open={detailsOpen}
-    item={scannedItem}
-    onClose={() => {
-        setDetailsOpen(false);
-        setScannedItem(null);
-    }}
-    onSuccess={async () => {
-        await loadInventory();
-    }}
-/>
-        </div>
-    );
+        <QRScanner
+            open={scannerOpen}
+            onScan={handleScan}
+            onClose={() =>
+                setScannerOpen(false)
+            }
+        />
+
+        <InventoryItemDetailsModal
+            open={detailsOpen}
+            item={scannedItem}
+            onClose={() => {
+                setDetailsOpen(false);
+                setScannedItem(null);
+            }}
+            onSuccess={async () => {
+                await loadInventory();
+            }}
+        />
+
+    </div>
+);
+
+
 }

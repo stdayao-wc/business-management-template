@@ -86,16 +86,6 @@ function getAction(order) {
     };
   }
 
-  // if (
-  //   order.shipping_method !== "PICKUP" &&
-  //   order.fulfillment_status === "SHIPPED"
-  // ) {
-  //   return {
-  //     label: "Mark Delivered",
-  //     action: "delivered",
-  //   };
-  // }
-
   return null;
 }
 
@@ -120,7 +110,7 @@ export default function OrdersTable({
 
   if (loading) {
     return (
-      <div className="rounded-xl bg-white p-8 text-center">
+      <div className="rounded-xl bg-white p-6 text-center sm:p-8">
         Loading orders...
       </div>
     );
@@ -128,182 +118,320 @@ export default function OrdersTable({
 
   if (!orders.length) {
     return (
-      <div className="rounded-xl bg-white p-8 text-center text-gray-500">
+      <div className="rounded-xl bg-white p-6 text-center text-gray-500 sm:p-8">
         No orders found.
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl bg-white shadow-sm">
-      <table className="w-full min-w-[1000px]">
-        <thead>
-          <tr className="border-b text-left text-sm text-gray-500">
-            <th className="px-6 py-4">Receipt</th>
+    <div className="overflow-hidden rounded-xl bg-white shadow-sm">
+      {/* Desktop / Tablet */}
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b text-left text-sm text-gray-500">
+              <th className="whitespace-nowrap px-6 py-4 font-medium">
+                Receipt
+              </th>
 
-            <th className="px-6 py-4">Customer</th>
+              <th className="whitespace-nowrap px-6 py-4 font-medium">
+                Customer
+              </th>
 
-            <th className="px-6 py-4">Shipping</th>
+              <th className="whitespace-nowrap px-6 py-4 font-medium">
+                Shipping
+              </th>
 
-            <th className="px-6 py-4">Total</th>
+              <th className="whitespace-nowrap px-6 py-4 font-medium">Total</th>
 
-            <th className="px-6 py-4">Status</th>
+              <th className="whitespace-nowrap px-6 py-4 font-medium">
+                Status
+              </th>
 
-            <th className="px-6 py-4">Date</th>
+              <th className="whitespace-nowrap px-6 py-4 font-medium">Date</th>
 
-            <th className="px-6 py-4">Actions</th>
-          </tr>
-        </thead>
+              <th className="whitespace-nowrap px-6 py-4 font-medium">
+                Actions
+              </th>
+            </tr>
+          </thead>
 
-        <tbody>
-          {orders.map((order) => {
-            const action = getAction(order);
+          <tbody>
+            {orders.map((order) => {
+              const action = getAction(order);
+              const updating = updatingOrderId === order.id;
 
-            const updating = updatingOrderId === order.id;
-
-            return (
-              <tr
-                key={order.id}
-                className="border-b last:border-b-0 hover:bg-gray-50"
-              >
-                <td className="px-6 py-4">
-                  <button
-                    type="button"
-                    onClick={() => onView(order)}
-                    className="font-medium text-blue-600 hover:underline"
-                  >
-                    {order.receipt_number}
-                  </button>
-                </td>
-
-                <td className="px-6 py-4">
-                  <div className="font-medium">
-                    {order.customer_name || "-"}
-                  </div>
-
-                  <div className="text-sm text-gray-500">
-                    {order.customer_phone || "-"}
-                  </div>
-                </td>
-
-                <td className="px-6 py-4">{order.shipping_method || "-"}</td>
-
-                <td className="px-6 py-4 font-medium">
-                  {formatCurrency(order.total)}
-                </td>
-
-                <td className="px-6 py-4">
-                  <span
-                    className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${getStatusClass(
-                      order.fulfillment_status,
-                    )}`}
-                  >
-                    {getStatusLabel(order.fulfillment_status)}
-                  </span>
-                </td>
-
-                <td className="px-6 py-4 text-sm text-gray-500">
-                  {formatDate(order.created_at)}
-                </td>
-
-                <td className="px-6 py-4">
-                  <div className="flex gap-2">
+              return (
+                <tr
+                  key={order.id}
+                  className="border-b last:border-b-0 hover:bg-gray-50"
+                >
+                  <td className="whitespace-nowrap px-6 py-4">
                     <button
                       type="button"
                       onClick={() => onView(order)}
-                      className="rounded-lg border px-3 py-2 text-sm"
+                      className="font-medium text-blue-600 hover:underline"
                     >
-                      View
+                      {order.receipt_number}
                     </button>
+                  </td>
 
-                    <button
-                      type="button"
-                      onClick={() => onViewReceipt(order.id)}
-                      className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700 hover:bg-blue-100"
+                  <td className="px-6 py-4">
+                    <div className="font-medium">
+                      {order.customer_name || "-"}
+                    </div>
+
+                    <div className="text-sm text-gray-500">
+                      {order.customer_phone || "-"}
+                    </div>
+                  </td>
+
+                  <td className="whitespace-nowrap px-6 py-4">
+                    {order.shipping_method || "-"}
+                  </td>
+
+                  <td className="whitespace-nowrap px-6 py-4 font-medium">
+                    {formatCurrency(order.total)}
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <span
+                      className={`inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${getStatusClass(
+                        order.fulfillment_status,
+                      )}`}
                     >
-                      Receipt
-                    </button>
+                      {getStatusLabel(order.fulfillment_status)}
+                    </span>
+                  </td>
 
-                    {(order.fulfillment_status === "PENDING" ||
-                      order.fulfillment_status === "READY_FOR_PICKUP") && (
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    {formatDate(order.created_at)}
+                  </td>
+
+                  <td className="px-6 py-4">
+                    <div className="flex min-w-max flex-wrap gap-2">
                       <button
                         type="button"
-                        disabled={updating}
-                        onClick={() => onVoid(order.id)}
-                        className="rounded-lg bg-red-600 px-3 py-2 text-sm text-white disabled:opacity-50"
+                        onClick={() => onView(order)}
+                        className="rounded-lg border px-3 py-2 text-sm transition hover:bg-gray-50"
                       >
-                        {updating ? "Updating..." : "Void"}
+                        View
                       </button>
-                    )}
 
-                    {action?.action === "ready_for_pickup" && (
                       <button
                         type="button"
-                        disabled={updating}
-                        onClick={() => onMarkReadyForPickup(order.id)}
-                        className="rounded-lg bg-yellow-600 px-3 py-2 text-sm text-white disabled:opacity-50"
+                        onClick={() => onViewReceipt(order.id)}
+                        className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700 transition hover:bg-blue-100"
                       >
-                        {updating ? "Updating..." : action.label}
+                        Receipt
                       </button>
-                    )}
 
-                    {action?.action === "picked_up" && (
-                      <button
-                        type="button"
-                        disabled={updating}
-                        onClick={() => onMarkPickedUp(order.id)}
-                        className="rounded-lg bg-green-600 px-3 py-2 text-sm text-white disabled:opacity-50"
-                      >
-                        {updating ? "Updating..." : action.label}
-                      </button>
-                    )}
+                      {(order.fulfillment_status === "PENDING" ||
+                        order.fulfillment_status === "READY_FOR_PICKUP") && (
+                        <button
+                          type="button"
+                          disabled={updating}
+                          onClick={() => onVoid(order.id)}
+                          className="rounded-lg bg-red-600 px-3 py-2 text-sm text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {updating ? "Updating..." : "Void"}
+                        </button>
+                      )}
 
-                    {action?.action === "shipped" && (
-                      <button
-                        type="button"
-                        disabled={updating}
-                        onClick={() => onMarkShipped(order.id)}
-                        className="rounded-lg bg-blue-600 px-3 py-2 text-sm text-white disabled:opacity-50"
-                      >
-                        {updating ? "Updating..." : action.label}
-                      </button>
-                    )}
+                      {action?.action === "ready_for_pickup" && (
+                        <button
+                          type="button"
+                          disabled={updating}
+                          onClick={() => onMarkReadyForPickup(order.id)}
+                          className="rounded-lg bg-yellow-600 px-3 py-2 text-sm text-white transition hover:bg-yellow-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {updating ? "Updating..." : action.label}
+                        </button>
+                      )}
 
-                    {/* {action?.action === "delivered" && (
-                      <button
-                        type="button"
-                        disabled={updating}
-                        onClick={() => onMarkDelivered(order.id)}
-                        className="rounded-lg bg-green-600 px-3 py-2 text-sm text-white disabled:opacity-50"
-                      >
-                        {updating ? "Updating..." : action.label}
-                      </button>
-                    )} */}
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                      {action?.action === "picked_up" && (
+                        <button
+                          type="button"
+                          disabled={updating}
+                          onClick={() => onMarkPickedUp(order.id)}
+                          className="rounded-lg bg-green-600 px-3 py-2 text-sm text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {updating ? "Updating..." : action.label}
+                        </button>
+                      )}
 
-      <div className="flex items-center justify-between border-t px-6 py-4">
+                      {action?.action === "shipped" && (
+                        <button
+                          type="button"
+                          disabled={updating}
+                          onClick={() => onMarkShipped(order.id)}
+                          className="rounded-lg bg-blue-600 px-3 py-2 text-sm text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {updating ? "Updating..." : action.label}
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile */}
+      <div className="space-y-3 p-4 md:hidden">
+        {orders.map((order) => {
+          const action = getAction(order);
+          const updating = updatingOrderId === order.id;
+
+          return (
+            <div key={order.id} className="rounded-xl border p-4">
+              {/* Receipt / Status */}
+              <div className="flex items-start justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => onView(order)}
+                  className="min-w-0 break-all text-left font-medium text-blue-600 hover:underline"
+                >
+                  {order.receipt_number}
+                </button>
+
+                <span
+                  className={`inline-flex shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${getStatusClass(
+                    order.fulfillment_status,
+                  )}`}
+                >
+                  {getStatusLabel(order.fulfillment_status)}
+                </span>
+              </div>
+
+              {/* Customer */}
+              <div className="mt-3">
+                <p className="font-medium">{order.customer_name || "-"}</p>
+
+                <p className="mt-1 text-sm text-gray-500">
+                  {order.customer_phone || "-"}
+                </p>
+              </div>
+
+              {/* Order Details */}
+              <div className="mt-3 grid grid-cols-2 gap-3 border-t pt-3">
+                <div>
+                  <p className="text-xs text-gray-500">Shipping</p>
+
+                  <p className="mt-1 text-sm font-medium">
+                    {order.shipping_method || "-"}
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <p className="text-xs text-gray-500">Total</p>
+
+                  <p className="mt-1 text-sm font-semibold">
+                    {formatCurrency(order.total)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Date */}
+              <div className="mt-3 border-t pt-3">
+                <p className="text-xs text-gray-500">Date</p>
+
+                <p className="mt-1 text-sm text-gray-600">
+                  {formatDate(order.created_at)}
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="mt-4 flex flex-col gap-2 border-t pt-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onView(order)}
+                    className="rounded-lg border px-3 py-2 text-sm font-medium transition hover:bg-gray-50"
+                  >
+                    View
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onViewReceipt(order.id)}
+                    className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100"
+                  >
+                    Receipt
+                  </button>
+                </div>
+
+                {(order.fulfillment_status === "PENDING" ||
+                  order.fulfillment_status === "READY_FOR_PICKUP") && (
+                  <button
+                    type="button"
+                    disabled={updating}
+                    onClick={() => onVoid(order.id)}
+                    className="w-full rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {updating ? "Updating..." : "Void"}
+                  </button>
+                )}
+
+                {action?.action === "ready_for_pickup" && (
+                  <button
+                    type="button"
+                    disabled={updating}
+                    onClick={() => onMarkReadyForPickup(order.id)}
+                    className="w-full rounded-lg bg-yellow-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-yellow-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {updating ? "Updating..." : action.label}
+                  </button>
+                )}
+
+                {action?.action === "picked_up" && (
+                  <button
+                    type="button"
+                    disabled={updating}
+                    onClick={() => onMarkPickedUp(order.id)}
+                    className="w-full rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {updating ? "Updating..." : action.label}
+                  </button>
+                )}
+
+                {action?.action === "shipped" && (
+                  <button
+                    type="button"
+                    disabled={updating}
+                    onClick={() => onMarkShipped(order.id)}
+                    className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {updating ? "Updating..." : action.label}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Pagination */}
+      <div className="flex flex-col gap-3 border-t px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between">
         <p className="text-sm text-gray-500">
           Showing {totalOrders === 0 ? 0 : (page - 1) * pageSize + 1}–
           {Math.min(page * pageSize, totalOrders)} of {totalOrders} orders
         </p>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2 md:justify-end">
           <button
             type="button"
             onClick={() => onPageChange(page - 1)}
             disabled={loading || page <= 1}
-            className="rounded-lg border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border px-3 py-2 text-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
           >
             Previous
           </button>
 
-          <span className="px-2 text-sm text-gray-600">
+          <span className="whitespace-nowrap px-1 text-sm text-gray-600 sm:px-2">
             Page {page} of {totalPages}
           </span>
 
@@ -311,7 +439,7 @@ export default function OrdersTable({
             type="button"
             onClick={() => onPageChange(page + 1)}
             disabled={loading || page >= totalPages}
-            className="rounded-lg border px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border px-3 py-2 text-sm transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 sm:px-4"
           >
             Next
           </button>

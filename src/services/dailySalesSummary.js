@@ -112,13 +112,21 @@ export async function getDailySalesSummary({
         endDate,
     } = getDateRange(date);
 
-    let query = supabase
+    /*
+     * Get completed sales created during the selected day.
+     *
+     * These are used for:
+     * - Total Products Sold
+     * - Gross Revenue
+     * - Total Product Cost
+     * - Gross Profit
+     */
+    let salesQuery = supabase
         .from(SALES_TABLE)
         .select(`
             id,
             cashier_id,
             total,
-            payment_method,
             sale_items (
                 quantity,
                 cost_price
@@ -129,17 +137,67 @@ export async function getDailySalesSummary({
         .lt("created_at", endDate);
 
     if (cashierId) {
-        query = query.eq(
+        salesQuery = salesQuery.eq(
             "cashier_id",
             cashierId
         );
     }
 
-    const { data: sales, error } =
-        await query;
+    /*
+     * Get payments actually received during the
+     * selected day.
+     *
+     * This is intentionally based on sale_payments.created_at
+     * rather than sales.created_at.
+     */
+    let paymentsQuery = supabase
+        .from("sale_payments")
+        .select(`
+            id,
+            sale_id,
+            payment_method,
+            amount,
+            created_at,
+            sale:sales!inner (
+                id,
+                cashier_id,
+                status
+            )
+        `)
+        .eq(
+            "sale.status",
+            "completed"
+        )
+        .gte(
+            "created_at",
+            startDate
+        )
+        .lt(
+            "created_at",
+            endDate
+        );
 
-    if (error) {
-        throw error;
+    if (cashierId) {
+        paymentsQuery = paymentsQuery.eq(
+            "sale.cashier_id",
+            cashierId
+        );
+    }
+
+    const [
+        { data: sales, error: salesError },
+        { data: payments, error: paymentsError },
+    ] = await Promise.all([
+        salesQuery,
+        paymentsQuery,
+    ]);
+
+    if (salesError) {
+        throw salesError;
+    }
+
+    if (paymentsError) {
+        throw paymentsError;
     }
 
     const summary = {
@@ -157,26 +215,14 @@ export async function getDailySalesSummary({
         grossProfit: 0,
     };
 
+    /*
+     * Sales / revenue calculations.
+     */
     for (const sale of sales ?? []) {
         const saleTotal =
             Number(sale.total) || 0;
 
         summary.grossRevenue += saleTotal;
-
-        switch (sale.payment_method) {
-            case "Cash":
-                summary.cashIncome += saleTotal;
-                break;
-
-            case "E-Wallet":
-                summary.ewalletIncome += saleTotal;
-                break;
-
-            case "Online Banking":
-                summary.onlineBankingIncome +=
-                    saleTotal;
-                break;
-        }
 
         for (const item of sale.sale_items ?? []) {
             const quantity =
@@ -185,10 +231,36 @@ export async function getDailySalesSummary({
             const costPrice =
                 Number(item.cost_price) || 0;
 
-            summary.totalProductsSold += quantity;
+            summary.totalProductsSold +=
+                quantity;
 
             summary.totalCost +=
                 quantity * costPrice;
+        }
+    }
+
+    /*
+     * Actual cash received calculations.
+     *
+     * Do NOT use sale.total here.
+     */
+    for (const payment of payments ?? []) {
+        const amount =
+            Number(payment.amount) || 0;
+
+        switch (payment.payment_method) {
+            case "Cash":
+                summary.cashIncome += amount;
+                break;
+
+            case "E-Wallet":
+                summary.ewalletIncome += amount;
+                break;
+
+            case "Online Banking":
+                summary.onlineBankingIncome +=
+                    amount;
+                break;
         }
     }
 
