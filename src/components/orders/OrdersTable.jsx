@@ -126,36 +126,32 @@ export default function OrdersTable({
 
   return (
     <div className="overflow-hidden rounded-xl bg-white shadow-sm">
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px]">
+      {/* Desktop / Tablet */}
+      <div className="hidden overflow-x-auto md:block">
+        <table className="w-full">
           <thead>
             <tr className="border-b text-left text-sm text-gray-500">
-              <th className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
+              <th className="whitespace-nowrap px-6 py-4 font-medium">
                 Receipt
               </th>
 
-              <th className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
+              <th className="whitespace-nowrap px-6 py-4 font-medium">
                 Customer
               </th>
 
-              <th className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
+              <th className="whitespace-nowrap px-6 py-4 font-medium">
                 Shipping
               </th>
 
-              <th className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
-                Total
-              </th>
+              <th className="whitespace-nowrap px-6 py-4 font-medium">Total</th>
 
-              <th className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
+              <th className="whitespace-nowrap px-6 py-4 font-medium">
                 Status
               </th>
 
-              <th className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
-                Date
-              </th>
+              <th className="whitespace-nowrap px-6 py-4 font-medium">Date</th>
 
-              <th className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
+              <th className="whitespace-nowrap px-6 py-4 font-medium">
                 Actions
               </th>
             </tr>
@@ -171,7 +167,7 @@ export default function OrdersTable({
                   key={order.id}
                   className="border-b last:border-b-0 hover:bg-gray-50"
                 >
-                  <td className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
+                  <td className="whitespace-nowrap px-6 py-4">
                     <button
                       type="button"
                       onClick={() => onView(order)}
@@ -181,8 +177,8 @@ export default function OrdersTable({
                     </button>
                   </td>
 
-                  <td className="px-4 py-3 sm:px-6 sm:py-4">
-                    <div className="min-w-[150px] font-medium">
+                  <td className="px-6 py-4">
+                    <div className="font-medium">
                       {order.customer_name || "-"}
                     </div>
 
@@ -191,15 +187,15 @@ export default function OrdersTable({
                     </div>
                   </td>
 
-                  <td className="whitespace-nowrap px-4 py-3 sm:px-6 sm:py-4">
+                  <td className="whitespace-nowrap px-6 py-4">
                     {order.shipping_method || "-"}
                   </td>
 
-                  <td className="whitespace-nowrap px-4 py-3 font-medium sm:px-6 sm:py-4">
+                  <td className="whitespace-nowrap px-6 py-4 font-medium">
                     {formatCurrency(order.total)}
                   </td>
 
-                  <td className="px-4 py-3 sm:px-6 sm:py-4">
+                  <td className="px-6 py-4">
                     <span
                       className={`inline-flex whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${getStatusClass(
                         order.fulfillment_status,
@@ -209,11 +205,11 @@ export default function OrdersTable({
                     </span>
                   </td>
 
-                  <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 sm:px-6 sm:py-4">
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                     {formatDate(order.created_at)}
                   </td>
 
-                  <td className="px-4 py-3 sm:px-6 sm:py-4">
+                  <td className="px-6 py-4">
                     <div className="flex min-w-max flex-wrap gap-2">
                       <button
                         type="button"
@@ -284,14 +280,148 @@ export default function OrdersTable({
         </table>
       </div>
 
+      {/* Mobile */}
+      <div className="space-y-3 p-4 md:hidden">
+        {orders.map((order) => {
+          const action = getAction(order);
+          const updating = updatingOrderId === order.id;
+
+          return (
+            <div key={order.id} className="rounded-xl border p-4">
+              {/* Receipt / Status */}
+              <div className="flex items-start justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => onView(order)}
+                  className="min-w-0 break-all text-left font-medium text-blue-600 hover:underline"
+                >
+                  {order.receipt_number}
+                </button>
+
+                <span
+                  className={`inline-flex shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium ${getStatusClass(
+                    order.fulfillment_status,
+                  )}`}
+                >
+                  {getStatusLabel(order.fulfillment_status)}
+                </span>
+              </div>
+
+              {/* Customer */}
+              <div className="mt-3">
+                <p className="font-medium">{order.customer_name || "-"}</p>
+
+                <p className="mt-1 text-sm text-gray-500">
+                  {order.customer_phone || "-"}
+                </p>
+              </div>
+
+              {/* Order Details */}
+              <div className="mt-3 grid grid-cols-2 gap-3 border-t pt-3">
+                <div>
+                  <p className="text-xs text-gray-500">Shipping</p>
+
+                  <p className="mt-1 text-sm font-medium">
+                    {order.shipping_method || "-"}
+                  </p>
+                </div>
+
+                <div className="text-right">
+                  <p className="text-xs text-gray-500">Total</p>
+
+                  <p className="mt-1 text-sm font-semibold">
+                    {formatCurrency(order.total)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Date */}
+              <div className="mt-3 border-t pt-3">
+                <p className="text-xs text-gray-500">Date</p>
+
+                <p className="mt-1 text-sm text-gray-600">
+                  {formatDate(order.created_at)}
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="mt-4 flex flex-col gap-2 border-t pt-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => onView(order)}
+                    className="rounded-lg border px-3 py-2 text-sm font-medium transition hover:bg-gray-50"
+                  >
+                    View
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onViewReceipt(order.id)}
+                    className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition hover:bg-blue-100"
+                  >
+                    Receipt
+                  </button>
+                </div>
+
+                {(order.fulfillment_status === "PENDING" ||
+                  order.fulfillment_status === "READY_FOR_PICKUP") && (
+                  <button
+                    type="button"
+                    disabled={updating}
+                    onClick={() => onVoid(order.id)}
+                    className="w-full rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {updating ? "Updating..." : "Void"}
+                  </button>
+                )}
+
+                {action?.action === "ready_for_pickup" && (
+                  <button
+                    type="button"
+                    disabled={updating}
+                    onClick={() => onMarkReadyForPickup(order.id)}
+                    className="w-full rounded-lg bg-yellow-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-yellow-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {updating ? "Updating..." : action.label}
+                  </button>
+                )}
+
+                {action?.action === "picked_up" && (
+                  <button
+                    type="button"
+                    disabled={updating}
+                    onClick={() => onMarkPickedUp(order.id)}
+                    className="w-full rounded-lg bg-green-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {updating ? "Updating..." : action.label}
+                  </button>
+                )}
+
+                {action?.action === "shipped" && (
+                  <button
+                    type="button"
+                    disabled={updating}
+                    onClick={() => onMarkShipped(order.id)}
+                    className="w-full rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {updating ? "Updating..." : action.label}
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
       {/* Pagination */}
-      <div className="flex flex-col gap-3 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <div className="flex flex-col gap-3 border-t px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between">
         <p className="text-sm text-gray-500">
           Showing {totalOrders === 0 ? 0 : (page - 1) * pageSize + 1}–
           {Math.min(page * pageSize, totalOrders)} of {totalOrders} orders
         </p>
 
-        <div className="flex items-center justify-between gap-2 sm:justify-end">
+        <div className="flex items-center justify-between gap-2 md:justify-end">
           <button
             type="button"
             onClick={() => onPageChange(page - 1)}
