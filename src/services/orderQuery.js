@@ -118,6 +118,8 @@ function addOrderPaymentSummary(order) {
 export async function getOrdersByDateRange({
     startDate,
     endDate,
+    search = "",
+    status = "",
     page = 1,
     pageSize = 5,
 } = {}) {
@@ -187,6 +189,32 @@ export async function getOrdersByDateRange({
         query = query.lte(
             "created_at",
             endDate.toISOString()
+        );
+    }
+
+    const trimmedSearch =
+        search.trim();
+
+    if (trimmedSearch) {
+        const escapedSearch =
+            trimmedSearch
+                .replaceAll("\\", "\\\\")
+                .replaceAll("%", "\\%")
+                .replaceAll("_", "\\_");
+
+        query = query.or(
+            [
+                `receipt_number.ilike.%${escapedSearch}%`,
+                `customer_name.ilike.%${escapedSearch}%`,
+                `customer_phone.ilike.%${escapedSearch}%`,
+            ].join(",")
+        );
+    }
+
+    if (status) {
+        query = query.eq(
+            "fulfillment_status",
+            status
         );
     }
 
