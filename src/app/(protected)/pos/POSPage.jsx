@@ -354,7 +354,6 @@ export default function POSPage() {
   return (
     <div className="space-y-6">
       {/* Daily Payment Summary */}
-
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div className="rounded-xl border bg-white p-5">
           <p className="text-sm text-gray-500">Cash</p>
@@ -380,11 +379,9 @@ export default function POSPage() {
           </p>
         </div>
       </div>
-
       {/* POS */}
-
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        <div className="space-y-4 lg:col-span-8">
+        <div className="order-last space-y-4 lg:order-first lg:col-span-8">
           <div className="grid gap-3 md:grid-cols-[1fr_auto]">
             <div className="space-y-4 lg:col-span-8">
               <div className="flex items-center justify-between">
@@ -439,7 +436,7 @@ export default function POSPage() {
           </div>
         </div>
 
-        <div className="lg:col-span-4">
+        <div className="order-first lg:order-last lg:col-span-4">
           <CartPanel
             cart={cart}
             totals={totals}
