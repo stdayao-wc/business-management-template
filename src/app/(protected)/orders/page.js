@@ -11,9 +11,8 @@ import OrderFilters from "@/components/orders/OrderFilters";
 import useOrdersPage from "@/hooks/useOrdersPage";
 
 export default function OrdersPage() {
-const {
-user,
-
+  const {
+    user,
 
     orders,
     loading,
@@ -55,142 +54,100 @@ user,
 
     handleBalancePaymentSuccess,
     handleCloseBalanceModal,
-} = useOrdersPage();
+  } = useOrdersPage();
 
-return (
-    <div className="space-y-8">
-        <div>
-            <h1 className="text-4xl font-bold">
-                Orders
-            </h1>
+  return (
+    <div className="space-y-6 sm:space-y-8">
+      {/* Header */}
+      <div>
+        <h1 className="text-3xl font-bold sm:text-4xl">
+          Orders
+        </h1>
 
-            <p className="mt-2 text-gray-500">
-                View sales and manage order
-                fulfillment.
-            </p>
-        </div>
+        <p className="mt-1 text-sm text-gray-500 sm:mt-2 sm:text-base">
+          View sales and manage order fulfillment.
+        </p>
+      </div>
 
-<OrderPeriodFilter
-    period={period}
-    onChange={setPeriod}
-/>
+      {/* Filters / Actions */}
+      <div className="space-y-3 rounded-xl border bg-white p-4 shadow-sm">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[auto_1fr_auto] lg:items-end">
+          <div className="min-w-0">
+            <OrderPeriodFilter
+              period={period}
+              onChange={setPeriod}
+            />
+          </div>
 
-<OrderFilters
-    search={search}
-    onSearchChange={setSearch}
-    status={status}
-    onStatusChange={setStatus}
-/>
+          <div className="min-w-0">
+            <OrderFilters
+              search={search}
+              onSearchChange={setSearch}
+              status={status}
+              onStatusChange={setStatus}
+            />
+          </div>
 
-        <button
+          <button
             type="button"
-            onClick={() =>
-                setGetReceiptOpen(true)
-            }
-            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-        >
+            onClick={() => setGetReceiptOpen(true)}
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 sm:w-auto"
+          >
             Get Receipt
-        </button>
+          </button>
+        </div>
+      </div>
 
-        <OrdersTable
-            orders={orders}
-            loading={loading}
-            updatingOrderId={
-                updatingOrderId
-            }
-            page={page}
-            pageSize={pageSize}
-            totalOrders={
-                totalOrders
-            }
-            onPageChange={
-                handlePageChange
-            }
-            onView={
-                setSelectedOrder
-            }
-            onViewReceipt={
-                handleViewReceipt
-            }
-            onMarkReadyForPickup={(
-                orderId
-            ) =>
-                handleStatusUpdate(
-                    orderId,
-                    "ready_for_pickup"
-                )
-            }
-            onMarkPickedUp={(
-                orderId
-            ) =>
-                handleStatusUpdate(
-                    orderId,
-                    "picked_up"
-                )
-            }
-            onMarkShipped={(
-                orderId
-            ) =>
-                handleStatusUpdate(
-                    orderId,
-                    "shipped"
-                )
-            }
-            onVoid={
-                handleVoidOrder
-            }
-        />
+      {/* Orders */}
+      <OrdersTable
+        orders={orders}
+        loading={loading}
+        updatingOrderId={updatingOrderId}
+        page={page}
+        pageSize={pageSize}
+        totalOrders={totalOrders}
+        onPageChange={handlePageChange}
+        onView={setSelectedOrder}
+        onViewReceipt={handleViewReceipt}
+        onMarkReadyForPickup={(orderId) =>
+          handleStatusUpdate(orderId, "ready_for_pickup")
+        }
+        onMarkPickedUp={(orderId) =>
+          handleStatusUpdate(orderId, "picked_up")
+        }
+        onMarkShipped={(orderId) =>
+          handleStatusUpdate(orderId, "shipped")
+        }
+        onVoid={handleVoidOrder}
+      />
 
-        <OrderDetailsModal
-            open={
-                selectedOrder !== null
-            }
-            order={
-                selectedOrder
-            }
-            onClose={() =>
-                setSelectedOrder(null)
-            }
-        />
+      <OrderDetailsModal
+        open={selectedOrder !== null}
+        order={selectedOrder}
+        onClose={() => setSelectedOrder(null)}
+      />
 
-        <ReceiptModal
-            open={receipt !== null}
-            receipt={receipt}
-            onClose={() =>
-                setReceipt(null)
-            }
-        />
+      <ReceiptModal
+        open={receipt !== null}
+        receipt={receipt}
+        onClose={() => setReceipt(null)}
+      />
 
-        <GetReceiptModal
-            open={getReceiptOpen}
-            loading={receiptLoading}
-            onClose={() =>
-                setGetReceiptOpen(false)
-            }
-            onGetReceipt={
-                handleGetReceipt
-            }
-        />
+      <GetReceiptModal
+        open={getReceiptOpen}
+        loading={receiptLoading}
+        onClose={() => setGetReceiptOpen(false)}
+        onGetReceipt={handleGetReceipt}
+      />
 
-        <CollectBalanceModal
-            open={
-                balanceOrder !== null
-            }
-            order={
-                balanceOrder
-            }
-            user={
-                user
-            }
-            onClose={
-                handleCloseBalanceModal
-            }
-            onSuccess={
-                handleBalancePaymentSuccess
-            }
-        />
+      <CollectBalanceModal
+        open={balanceOrder !== null}
+        order={balanceOrder}
+        user={user}
+        onClose={handleCloseBalanceModal}
+        onSuccess={handleBalancePaymentSuccess}
+      />
     </div>
-);
-
-
+  );
 }
+
