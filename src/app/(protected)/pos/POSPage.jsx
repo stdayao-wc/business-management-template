@@ -354,31 +354,32 @@ export default function POSPage() {
   return (
     <div className="space-y-6">
       {/* Daily Payment Summary */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-xl border bg-white p-5">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="rounded-xl border bg-white p-3">
           <p className="text-sm text-gray-500">Cash</p>
 
-          <p className="mt-2 text-2xl font-semibold">
+          <p className="mt-1 text-xl font-semibold">
             ₱{paymentSummary.cash.toFixed(2)}
           </p>
         </div>
 
-        <div className="rounded-xl border bg-white p-5">
+        <div className="rounded-xl border bg-white p-3">
           <p className="text-sm text-gray-500">E-Wallet</p>
 
-          <p className="mt-2 text-2xl font-semibold">
+          <p className="mt-1 text-xl font-semibold">
             ₱{paymentSummary.eWallet.toFixed(2)}
           </p>
         </div>
 
-        <div className="rounded-xl border bg-white p-5">
+        <div className="rounded-xl border bg-white p-3">
           <p className="text-sm text-gray-500">Online Banking</p>
 
-          <p className="mt-2 text-2xl font-semibold">
+          <p className="mt-1 text-xl font-semibold">
             ₱{paymentSummary.onlineBanking.toFixed(2)}
           </p>
         </div>
       </div>
+
       {/* POS */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="order-last space-y-4 lg:order-first lg:col-span-8">
