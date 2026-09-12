@@ -37,7 +37,7 @@ export default function EmployeeDailySummaryModal({ summary, open, onClose }) {
   const { cashierName, date, sessions, salesSummary } = summary;
 
   function handlePrint() {
-    const printWindow = window.open("", "_blank", "width=800,height=900");
+    const printWindow = window.open("", "_blank", "width=400,height=700");
 
     if (!printWindow) {
       return;
@@ -47,251 +47,335 @@ export default function EmployeeDailySummaryModal({ summary, open, onClose }) {
       sessions?.length > 0
         ? sessions
             .map(
-              (session) => `
-            <tr>
-              <td>${formatTime(session.time_in)}</td>
-
-              <td>${formatTime(session.time_out)}</td>
-            </tr>
-          `,
+              (
+                session,
+              ) => `               <tr>                 <td>${formatTime(session.time_in)}</td>                 <td>${formatTime(session.time_out)}</td>               </tr>
+            `,
             )
             .join("")
-        : `
-        <tr>
-          <td
-            colspan="2"
-            style="text-align: center;"
-          >
-            No time records available.
-          </td>
-        </tr>
-      `;
+        : `           <tr>             <td colspan="2" class="empty">
+              No time records available.             </td>           </tr>
+        `;
 
-    printWindow.document.write(`
-  <!DOCTYPE html>
+    printWindow.document.write(` <!DOCTYPE html>
 
-  <html>
-    <head>
-      <title>
-        Daily Employee Summary
-      </title>
 
-      <style>
-        * {
-          box-sizing: border-box;
-        }
+<html>
+  <head>
+    <meta charset="UTF-8" />
 
-        body {
-          margin: 0;
-          padding: 40px;
-          font-family:
-            Arial,
-            Helvetica,
-            sans-serif;
-          color: #111827;
-        }
+    <title>
+      Daily Employee Summary
+    </title>
 
-        .container {
-          max-width: 700px;
-          margin: 0 auto;
-        }
+    <style>
+      @page {
+        size: 57mm auto;
+        margin: 0;
+      }
 
-        .header {
-          text-align: center;
-          margin-bottom: 32px;
-        }
+      * {
+        box-sizing: border-box;
+      }
 
-        .header h1 {
-          margin: 0;
-          font-size: 24px;
-        }
+      html,
+      body {
+        width: 57mm;
+        margin: 0;
+        padding: 0;
+      }
 
-        .header p {
-          margin: 6px 0 0;
-          color: #6b7280;
-        }
+      body {
+        background: #fff;
+        color: #000;
 
-        .section {
-          margin-top: 28px;
-        }
+        font-family:
+          Arial,
+          Helvetica,
+          sans-serif;
 
-        .section-title {
-          margin-bottom: 12px;
-          padding-bottom: 8px;
-          border-bottom:
-            1px solid #d1d5db;
-          font-size: 14px;
-          font-weight: bold;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: #6b7280;
-        }
+        font-size: 10px;
+        line-height: 1.3;
+      }
 
-        .info-row {
-          display: flex;
-          justify-content:
-            space-between;
-          gap: 20px;
-          padding: 12px 0;
-          border-bottom:
-            1px solid #e5e7eb;
-        }
+      .receipt {
+        width: 57mm;
 
-        .label {
-          color: #6b7280;
-        }
+        margin: 0;
+        padding: 4mm 3mm;
 
-        .value {
-          font-weight: bold;
-          text-align: right;
-        }
+        page-break-before: avoid;
+      }
 
-        .products-sold {
-          padding: 20px;
-          border:
-            1px solid #d1d5db;
-          border-radius: 8px;
-        }
+      .header {
+        text-align: center;
 
-        .products-sold-label {
-          color: #6b7280;
-          font-size: 14px;
-        }
+        margin-bottom: 3mm;
 
-        .products-sold-value {
-          margin-top: 6px;
-          font-size: 28px;
-          font-weight: bold;
-        }
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
 
-        table {
-          width: 100%;
-          border-collapse:
-            collapse;
-        }
+      .title {
+        margin: 0 0 1mm;
 
-        th,
-        td {
-          padding: 12px;
-          border:
-            1px solid #d1d5db;
-          text-align: left;
-        }
+        font-size: 14px;
+        font-weight: 700;
 
-        th {
-          background: #f3f4f6;
-          font-size: 14px;
-        }
+        letter-spacing: 0.3px;
+      }
 
-        @media print {
-          body {
-            padding: 0;
-          }
-        }
-      </style>
-    </head>
+      .header-line {
+        margin: 0;
 
-    <body>
-      <div class="container">
+        font-size: 9px;
+      }
 
-        <div class="header">
-          <h1>
-            DAILY EMPLOYEE SUMMARY
-          </h1>
+      .divider {
+        width: 100%;
 
-          <p>
-            ${formatDate(date)}
-          </p>
+        margin: 3mm 0;
 
-          <p>
-            Cashier:
-            ${cashierName || "Unknown"}
-          </p>
+        border-top: 1px dashed #000;
+      }
+
+      .section {
+        margin: 2mm 0;
+
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .section-title {
+        margin: 0 0 1.5mm;
+
+        font-size: 10px;
+        font-weight: 700;
+
+        text-transform: uppercase;
+      }
+
+      table {
+        width: 100%;
+
+        border-collapse: collapse;
+
+        font-size: 9px;
+      }
+
+      th,
+      td {
+        padding: 1.5mm 0;
+
+        border-bottom: 1px solid #000;
+
+        text-align: left;
+      }
+
+      th:last-child,
+      td:last-child {
+        text-align: right;
+      }
+
+      th {
+        font-weight: 700;
+      }
+
+      .empty {
+        padding: 2mm 0;
+
+        text-align: center !important;
+
+        border-bottom: 0;
+      }
+
+      .products {
+        display: flex;
+
+        align-items: center;
+        justify-content: space-between;
+
+        padding: 2mm 0;
+
+        border-top: 1px solid #000;
+        border-bottom: 1px solid #000;
+
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+
+      .products-label {
+        font-size: 9px;
+      }
+
+      .products-value {
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .payment-row {
+        display: flex;
+
+        justify-content: space-between;
+        align-items: flex-start;
+
+        width: 100%;
+
+        padding: 1.2mm 0;
+
+        border-bottom: 1px solid #000;
+
+        gap: 3mm;
+      }
+
+      .payment-label {
+        flex: 1;
+      }
+
+      .payment-value {
+        flex-shrink: 0;
+
+        text-align: right;
+
+        white-space: nowrap;
+
+        font-weight: 600;
+      }
+
+      .footer {
+        margin-top: 4mm;
+
+        text-align: center;
+
+        font-size: 8px;
+
+        page-break-inside: avoid;
+        break-inside: avoid;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="receipt">
+
+      <div class="header">
+        <div class="title">
+          DAILY EMPLOYEE SUMMARY
         </div>
 
-        <div class="section">
-          <div class="section-title">
-            Time Records
-          </div>
+        <p class="header-line">
+          ${formatDate(date)}
+        </p>
 
-          <table>
-            <thead>
-              <tr>
-                <th>
-                  Time In
-                </th>
-
-                <th>
-                  Time Out
-                </th>
-              </tr>
-            </thead>
-
-            <tbody>
-              ${sessionRows}
-            </tbody>
-          </table>
-        </div>
-
-        <div class="section">
-          <div class="products-sold">
-            <div class="products-sold-label">
-              Total Products Sold
-            </div>
-
-            <div class="products-sold-value">
-              ${Number(salesSummary?.totalProductsSold).toLocaleString()}
-            </div>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">
-            Payment Breakdown
-          </div>
-
-          <div class="info-row">
-            <span class="label">
-              Cash
-            </span>
-
-            <span class="value">
-              ${formatCurrency(salesSummary?.cashIncome)}
-            </span>
-          </div>
-
-          <div class="info-row">
-            <span class="label">
-              E-Wallet
-            </span>
-
-            <span class="value">
-              ${formatCurrency(salesSummary?.ewalletIncome)}
-            </span>
-          </div>
-
-          <div class="info-row">
-            <span class="label">
-              Online Banking
-            </span>
-
-            <span class="value">
-              ${formatCurrency(salesSummary?.onlineBankingIncome)}
-            </span>
-          </div>
-        </div>
-
+        <p class="header-line">
+          Cashier:
+          ${cashierName || "Unknown"}
+        </p>
       </div>
 
-      <script>
-        window.onload = function () {
-          window.focus();
+      <div class="divider"></div>
 
-          window.print();
-        };
-      </script>
-    </body>
-  </html>
+      <div class="section">
+        <div class="section-title">
+          Time Records
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>
+                Time In
+              </th>
+
+              <th>
+                Time Out
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            ${sessionRows}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section">
+        <div class="section-title">
+          Sales
+        </div>
+
+        <div class="products">
+          <span class="products-label">
+            Total Products Sold
+          </span>
+
+          <span class="products-value">
+            ${Number(salesSummary?.totalProductsSold || 0).toLocaleString()}
+          </span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="section">
+        <div class="section-title">
+          Payment Breakdown
+        </div>
+
+        <div class="payment-row">
+          <span class="payment-label">
+            Cash
+          </span>
+
+          <span class="payment-value">
+            ${formatCurrency(salesSummary?.cashIncome)}
+          </span>
+        </div>
+
+        <div class="payment-row">
+          <span class="payment-label">
+            E-Wallet
+          </span>
+
+          <span class="payment-value">
+            ${formatCurrency(salesSummary?.ewalletIncome)}
+          </span>
+        </div>
+
+        <div class="payment-row">
+          <span class="payment-label">
+            Online Banking
+          </span>
+
+          <span class="payment-value">
+            ${formatCurrency(salesSummary?.onlineBankingIncome)}
+          </span>
+        </div>
+      </div>
+
+      <div class="footer">
+        End of daily summary
+      </div>
+
+    </div>
+
+    <script>
+      window.onload = function () {
+        window.focus();
+
+        window.print();
+
+        setTimeout(function () {
+          window.close();
+        }, 100);
+      };
+    </script>
+  </body>
+</html>
+
+
 `);
 
     printWindow.document.close();
