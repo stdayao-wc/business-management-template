@@ -7,18 +7,20 @@ import ItemCard from "@/components/inventory/ItemCard";
 import ItemGrid from "@/components/inventory/ItemGrid";
 import ProductDialog from "@/components/inventory/ProductDialog";
 import BrandDialog from "@/components/inventory/BrandDialog";
+import CategoryDialog from "@/components/inventory/CategoryDialog";
 
 import { useAuth } from "@/context/AuthContext";
 
 import { toast } from "sonner";
 
 import { getProducts, deleteProduct } from "@/services/products";
-import CategoryDialog from "@/components/inventory/CategoryDialog";
 
 const PRODUCTS_PER_PAGE = 12;
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
+
+  const [isLoading, setIsLoading] = useState(true);
 
   const [isProductDialogOpen, setIsProductDialogOpen] = useState(false);
 
@@ -66,6 +68,8 @@ export default function ProductsPage() {
   }
 
   async function loadProducts() {
+    setIsLoading(true);
+
     try {
       const data = await getProducts();
 
@@ -74,6 +78,8 @@ export default function ProductsPage() {
       console.error(err);
 
       toast.error("Unable to load products.");
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -194,7 +200,18 @@ export default function ProductsPage() {
 
       {/* Product Grid */}
 
-      {paginatedProducts.length > 0 ? (
+      {isLoading ? (
+        <div className="flex min-h-[300px] items-center justify-center rounded-xl bg-white shadow-sm">
+          <div className="flex flex-col items-center gap-3">
+            <div
+              className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600"
+              aria-label="Loading products"
+              role="status"
+            />
+            <p className="text-sm text-gray-500">Loading products...</p>
+          </div>
+        </div>
+      ) : paginatedProducts.length > 0 ? (
         <ItemGrid>
           {paginatedProducts.map((product) => (
             <ItemCard
@@ -214,7 +231,7 @@ export default function ProductsPage() {
 
       {/* Pagination */}
 
-      {filteredProducts.length > 0 && (
+      {!isLoading && filteredProducts.length > 0 && (
         <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <p className="text-center text-sm text-gray-500 sm:text-left">
             Showing {startProduct}–{endProduct} of {filteredProducts.length}{" "}
