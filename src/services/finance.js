@@ -74,25 +74,26 @@ async function getExpenses({
             supplier_name,
             notes,
             created_by,
+            expense_date,
             created_at
         `);
 
     if (startDate) {
         query = query.gte(
-            "created_at",
+            "expense_date",
             startDate
         );
     }
 
     if (endDate) {
         query = query.lt(
-            "created_at",
+            "expense_date",
             endDate
         );
     }
 
     const { data, error } = await query.order(
-        "created_at",
+        "expense_date",
         {
             ascending: false,
         }
@@ -119,7 +120,8 @@ function normalizeSale(sale) {
 }
 
 function normalizeExpense(expense) {
-    let description = expense.description;
+    let description =
+        expense.description;
 
     if (
         expense.expense_type ===
@@ -141,15 +143,20 @@ function normalizeExpense(expense) {
 
     return {
         id: expense.id,
-        date: expense.created_at,
+        date: expense.expense_date,
         description,
         type: "CASH_OUT",
-        amount: Number(expense.amount),
+        amount: Number(
+            expense.amount
+        ),
         source: "EXPENSE",
         reference: expense.id,
-        expenseType: expense.expense_type,
-        employeeName: expense.employee_name,
-        supplierName: expense.supplier_name,
+        expenseType:
+            expense.expense_type,
+        employeeName:
+            expense.employee_name,
+        supplierName:
+            expense.supplier_name,
         notes: expense.notes,
     };
 }
@@ -219,6 +226,7 @@ export async function createExpense({
     supplierName = null,
     notes = null,
     createdBy,
+    expenseDate,
 }) {
     if (!createdBy) {
         throw new Error(
@@ -247,18 +255,52 @@ export async function createExpense({
         );
     }
 
+    if (!expenseDate) {
+        throw new Error(
+            "Expense date is required."
+        );
+    }
+
+    const parsedDate =
+        new Date(expenseDate);
+
+    if (
+        Number.isNaN(
+            parsedDate.getTime()
+        )
+    ) {
+        throw new Error(
+            "Invalid expense date."
+        );
+    }
+
     const { data, error } = await supabase
         .from(EXPENSES_TABLE)
         .insert({
-            expense_type: expenseType,
-            description: description.trim(),
+            expense_type:
+                expenseType,
+
+            description:
+                description.trim(),
+
             amount,
+
             employee_name:
-                employeeName?.trim() || null,
+                employeeName?.trim() ||
+                null,
+
             supplier_name:
-                supplierName?.trim() || null,
-            notes: notes?.trim() || null,
-            created_by: createdBy,
+                supplierName?.trim() ||
+                null,
+
+            notes:
+                notes?.trim() || null,
+
+            created_by:
+                createdBy,
+
+            expense_date:
+                parsedDate.toISOString(),
         })
         .select()
         .single();
@@ -269,13 +311,13 @@ export async function createExpense({
 
     return data;
 }
-
 export const FINANCE_PERIODS = {
     DAY: "day",
     WEEK: "week",
     MONTH: "month",
     YEAR: "year",
 };
+
 export function getFinanceDateRange(
     period,
     selectedDate = new Date()
@@ -285,93 +327,170 @@ export function getFinanceDateRange(
             ? new Date(selectedDate)
             : new Date(selectedDate);
 
-    if (Number.isNaN(date.getTime())) {
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
         throw new Error(
             "Invalid finance date."
         );
     }
 
-    if (period === FINANCE_PERIODS.DAY) {
-        const start = new Date(date);
+    const year =
+        date.getFullYear();
 
-        start.setHours(0, 0, 0, 0);
+    const month =
+        date.getMonth();
 
-        const end = new Date(start);
+    const day =
+        date.getDate();
 
-        end.setDate(
-            end.getDate() + 1
-        );
+    if (
+        period ===
+        FINANCE_PERIODS.DAY
+    ) {
+        const start =
+            new Date(
+                year,
+                month,
+                day,
+                0,
+                0,
+                0,
+                0
+            );
+
+        const end =
+            new Date(
+                year,
+                month,
+                day + 1,
+                0,
+                0,
+                0,
+                0
+            );
 
         return {
-            startDate: start.toISOString(),
-            endDate: end.toISOString(),
+            startDate:
+                start.toISOString(),
+            endDate:
+                end.toISOString(),
         };
     }
 
-    if (period === FINANCE_PERIODS.WEEK) {
-        const start = new Date(date);
+    if (
+        period ===
+        FINANCE_PERIODS.WEEK
+    ) {
+        const start =
+            new Date(
+                year,
+                month,
+                day
+            );
 
-        const day = start.getDay();
+        const currentDay =
+            start.getDay();
 
         const daysFromMonday =
-            day === 0
+            currentDay === 0
                 ? 6
-                : day - 1;
+                : currentDay - 1;
 
         start.setDate(
             start.getDate() -
                 daysFromMonday
         );
 
-        start.setHours(0, 0, 0, 0);
+        start.setHours(
+            0,
+            0,
+            0,
+            0
+        );
 
-        const end = new Date(start);
+        const end =
+            new Date(start);
 
         end.setDate(
             end.getDate() + 7
         );
 
         return {
-            startDate: start.toISOString(),
-            endDate: end.toISOString(),
+            startDate:
+                start.toISOString(),
+            endDate:
+                end.toISOString(),
         };
     }
 
-    if (period === FINANCE_PERIODS.MONTH) {
-        const start = new Date(
-            date.getFullYear(),
-            date.getMonth(),
-            1
-        );
+    if (
+        period ===
+        FINANCE_PERIODS.MONTH
+    ) {
+        const start =
+            new Date(
+                year,
+                month,
+                1,
+                0,
+                0,
+                0,
+                0
+            );
 
-        const end = new Date(
-            date.getFullYear(),
-            date.getMonth() + 1,
-            1
-        );
+        const end =
+            new Date(
+                year,
+                month + 1,
+                1,
+                0,
+                0,
+                0,
+                0
+            );
 
         return {
-            startDate: start.toISOString(),
-            endDate: end.toISOString(),
+            startDate:
+                start.toISOString(),
+            endDate:
+                end.toISOString(),
         };
     }
 
-    if (period === FINANCE_PERIODS.YEAR) {
-        const start = new Date(
-            date.getFullYear(),
-            0,
-            1
-        );
+    if (
+        period ===
+        FINANCE_PERIODS.YEAR
+    ) {
+        const start =
+            new Date(
+                year,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0
+            );
 
-        const end = new Date(
-            date.getFullYear() + 1,
-            0,
-            1
-        );
+        const end =
+            new Date(
+                year + 1,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0
+            );
 
         return {
-            startDate: start.toISOString(),
-            endDate: end.toISOString(),
+            startDate:
+                start.toISOString(),
+            endDate:
+                end.toISOString(),
         };
     }
 
@@ -380,7 +499,6 @@ export function getFinanceDateRange(
         endDate: null,
     };
 }
-
 export function calculateFinanceReport(
     transactions
 ) {

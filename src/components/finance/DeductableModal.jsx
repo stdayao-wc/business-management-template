@@ -4,409 +4,301 @@ import { useEffect, useState } from "react";
 
 import Modal from "@/components/common/Modal";
 
-import {
-    createExpense,
-    EXPENSE_TYPES,
-} from "@/services/finance";
+import { createExpense, EXPENSE_TYPES } from "@/services/finance";
 
 import { toast } from "sonner";
 
 const defaultForm = {
-    expenseType:
-        EXPENSE_TYPES.EMPLOYEE_SALARY,
-    description: "",
-    salaryMonth: "",
-    amount: "",
-    employeeName: "",
-    supplierName: "",
-    notes: "",
+  expenseType: EXPENSE_TYPES.EMPLOYEE_SALARY,
+  description: "",
+  expenseDate: "",
+  amount: "",
+  employeeName: "",
+  supplierName: "",
+  notes: "",
 };
 
 const fieldClass =
-    "w-full rounded-lg border px-3 py-2 outline-none transition focus:ring-2 focus:ring-blue-500";
+  "w-full rounded-lg border px-3 py-2 outline-none transition focus:ring-2 focus:ring-blue-500";
 
-const labelClass =
-    "mb-2 block text-sm font-medium";
+const labelClass = "mb-2 block text-sm font-medium";
 
-export default function DeductableModal({
-    open,
-    user,
-    onClose,
-    onSuccess,
-}) {
-    const [form, setForm] =
-        useState(defaultForm);
+function getCurrentDateTimeLocal() {
+  const now = new Date();
 
-    const [saving, setSaving] =
-        useState(false);
+  const year = now.getFullYear();
 
-    useEffect(() => {
-        if (open) {
-            setForm(defaultForm);
-        }
-    }, [open]);
+  const month = String(now.getMonth() + 1).padStart(2, "0");
 
-    function handleChange(event) {
-        const {
-            name,
-            value,
-        } = event.target;
+  const day = String(now.getDate()).padStart(2, "0");
 
-        setForm((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
+  const hours = String(now.getHours()).padStart(2, "0");
+
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+export default function DeductableModal({ open, user, onClose, onSuccess }) {
+  const [form, setForm] = useState(defaultForm);
+
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setForm({
+        ...defaultForm,
+        expenseDate: getCurrentDateTimeLocal(),
+      });
+    }
+  }, [open]);
+
+  function handleChange(event) {
+    const { name, value } = event.target;
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+
+    if (!user?.id) {
+      toast.error("Unable to identify the current user.");
+
+      return;
     }
 
-    async function handleSubmit(event) {
-        event.preventDefault();
+    try {
+      setSaving(true);
 
-        if (!user?.id) {
-            toast.error(
-                "Unable to identify the current user."
-            );
+      if (!form.expenseDate) {
+        throw new Error("Expense date and time is required.");
+      }
 
-            return;
-        }
+      let description = form.description;
 
-        try {
-            setSaving(true);
+      if (form.expenseType === EXPENSE_TYPES.EMPLOYEE_SALARY) {
+        description = "Employee Salary";
+      }
 
-        let description =
-            form.description;
+      await createExpense({
+        expenseType: form.expenseType,
 
-        if (
-            form.expenseType ===
-            EXPENSE_TYPES.EMPLOYEE_SALARY
-        ) {
-            if (!form.salaryMonth) {
-                throw new Error(
-                    "Salary month is required."
-                );
-            }
+        description,
 
-            const [year, month] =
-                form.salaryMonth.split("-");
+        amount: Number(form.amount),
 
-            const salaryDate = new Date(
-                Number(year),
-                Number(month) - 1,
-                1
-            );
+        employeeName:
+          form.expenseType === EXPENSE_TYPES.EMPLOYEE_SALARY
+            ? form.employeeName
+            : null,
 
-            const formattedMonth =
-                salaryDate.toLocaleDateString(
-                    "en-US",
-                    {
-                        month: "long",
-                        year: "numeric",
-                    }
-                );
+        supplierName:
+          form.expenseType === EXPENSE_TYPES.BUY_FROM_SUPPLIER
+            ? form.supplierName
+            : null,
 
-            description =
-                `Salary - ${formattedMonth}`;
-        }
+        notes: form.notes,
 
-        await createExpense({
-            expenseType:
-                form.expenseType,
+        createdBy: user.id,
 
-            description,
+        expenseDate: form.expenseDate,
+      });
 
-            amount: Number(form.amount),
+      toast.success("Deductable recorded successfully.");
 
-            employeeName:
-                form.expenseType ===
-                EXPENSE_TYPES.EMPLOYEE_SALARY
-                    ? form.employeeName
-                    : null,
+      await onSuccess?.();
 
-            supplierName:
-                form.expenseType ===
-                EXPENSE_TYPES.BUY_FROM_SUPPLIER
-                    ? form.supplierName
-                    : null,
+      onClose();
+    } catch (error) {
+      console.error("Failed to create expense:", error);
 
-            notes: form.notes,
-
-            createdBy: user.id,
-        });
-
-            toast.success(
-                "Deductable recorded successfully."
-            );
-
-            await onSuccess?.();
-
-            onClose();
-        } catch (error) {
-            console.error(
-                "Failed to create expense:",
-                error
-            );
-
-            toast.error(
-                error?.message ||
-                    "Unable to record deductable."
-            );
-        } finally {
-            setSaving(false);
-        }
+      toast.error(error?.message || "Unable to record deductable.");
+    } finally {
+      setSaving(false);
     }
+  }
 
-    return (
-        <Modal
-            open={open}
-            title="Add Deductable"
-            onClose={
-                saving
-                    ? undefined
-                    : onClose
-            }
-        >
-            <form
-                onSubmit={handleSubmit}
-                className="space-y-5"
-            >
+  return (
+    <Modal
+      open={open}
+      title="Add Deductable"
+      onClose={saving ? undefined : onClose}
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Expense Type */}
 
-                {/* Expense Type */}
+        <div>
+          <label className={labelClass}>Expense Type</label>
 
-                <div>
-                    <label
-                        className={labelClass}
-                    >
-                        Expense Type
-                    </label>
+          <select
+            name="expenseType"
+            value={form.expenseType}
+            onChange={handleChange}
+            className={fieldClass}
+            disabled={saving}
+          >
+            <option value={EXPENSE_TYPES.EMPLOYEE_SALARY}>
+              Employee Salary
+            </option>
 
-                    <select
-                        name="expenseType"
-                        value={
-                            form.expenseType
-                        }
-                        onChange={
-                            handleChange
-                        }
-                        className={
-                            fieldClass
-                        }
-                        disabled={saving}
-                    >
-                        <option
-                            value={
-                                EXPENSE_TYPES.EMPLOYEE_SALARY
-                            }
-                        >
-                            Employee Salary
-                        </option>
+            <option value={EXPENSE_TYPES.BUY_FROM_SUPPLIER}>
+              Buy From Supplier
+            </option>
 
-                        <option
-                            value={
-                                EXPENSE_TYPES.BUY_FROM_SUPPLIER
-                            }
-                        >
-                            Buy From Supplier
-                        </option>
+            <option value={EXPENSE_TYPES.OTHER}>Other</option>
+          </select>
+        </div>
 
-                        <option
-                            value={
-                                EXPENSE_TYPES.OTHER
-                            }
-                        >
-                            Other
-                        </option>
-                    </select>
-                </div>
+        {/* Employee Salary */}
 
-                {/* Employee Salary */}
+        {form.expenseType === EXPENSE_TYPES.EMPLOYEE_SALARY && (
+          <div>
+            <label className={labelClass}>Employee Name</label>
 
-                {form.expenseType ===
-                    EXPENSE_TYPES.EMPLOYEE_SALARY && (
-                    <>
-                        <div>
-                            <label className={labelClass}>
-                                Employee Name
-                            </label>
+            <input
+              type="text"
+              name="employeeName"
+              value={form.employeeName || ""}
+              onChange={handleChange}
+              placeholder="Enter employee name"
+              className={fieldClass}
+              disabled={saving}
+              required
+            />
+          </div>
+        )}
 
-                            <input
-                                type="text"
-                                name="employeeName"
-                                value={form.employeeName}
-                                onChange={handleChange}
-                                placeholder="Enter employee name"
-                                className={fieldClass}
-                                disabled={saving}
-                                required
-                            />
-                        </div>
+        {/* Supplier */}
 
-                        <div>
-                            <label className={labelClass}>
-                                Salary Month
-                            </label>
+        {form.expenseType === EXPENSE_TYPES.BUY_FROM_SUPPLIER && (
+          <>
+            <div>
+              <label className={labelClass}>Supplier Name</label>
 
-                            <input
-                                type="month"
-                                name="salaryMonth"
-                                value={form.salaryMonth}
-                                onChange={handleChange}
-                                className={fieldClass}
-                                disabled={saving}
-                                required
-                            />
-                        </div>
-                    </>
-                )}
+              <input
+                type="text"
+                name="supplierName"
+                value={form.supplierName || ""}
+                onChange={handleChange}
+                placeholder="Enter supplier name"
+                className={fieldClass}
+                disabled={saving}
+                required
+              />
+            </div>
 
-                {/* Supplier */}
+            <div>
+              <label className={labelClass}>Description</label>
 
-                {form.expenseType ===
-                    EXPENSE_TYPES.BUY_FROM_SUPPLIER && (
-                    <>
-                        <div>
-                            <label className={labelClass}>
-                                Supplier Name
-                            </label>
+              <input
+                type="text"
+                name="description"
+                value={form.description || ""}
+                onChange={handleChange}
+                placeholder="What was purchased?"
+                className={fieldClass}
+                disabled={saving}
+                required
+              />
+            </div>
+          </>
+        )}
 
-                            <input
-                                type="text"
-                                name="supplierName"
-                                value={form.supplierName}
-                                onChange={handleChange}
-                                placeholder="Enter supplier name"
-                                className={fieldClass}
-                                disabled={saving}
-                                required
-                            />
-                        </div>
+        {/* Other */}
 
-                        <div>
-                            <label className={labelClass}>
-                                Description
-                            </label>
+        {form.expenseType === EXPENSE_TYPES.OTHER && (
+          <div>
+            <label className={labelClass}>Description</label>
 
-                            <input
-                                type="text"
-                                name="description"
-                                value={form.description}
-                                onChange={handleChange}
-                                placeholder="What was purchased?"
-                                className={fieldClass}
-                                disabled={saving}
-                                required
-                            />
-                        </div>
-                    </>
-                )}
+            <input
+              type="text"
+              name="description"
+              value={form.description || ""}
+              onChange={handleChange}
+              placeholder="What was this expense for?"
+              className={fieldClass}
+              disabled={saving}
+              required
+            />
+          </div>
+        )}
 
-                {/* Other */}
+        {/* Expense Date & Time */}
 
-                {form.expenseType ===
-                    EXPENSE_TYPES.OTHER && (
-                    <div>
-                        <label className={labelClass}>
-                            Description
-                        </label>
+        <div>
+          <label className={labelClass}>Expense Date & Time</label>
 
-                        <input
-                            type="text"
-                            name="description"
-                            value={form.description}
-                            onChange={handleChange}
-                            placeholder="What was this expense for?"
-                            className={fieldClass}
-                            disabled={saving}
-                            required
-                        />
-                    </div>
-                )}
+          <input
+            type="datetime-local"
+            name="expenseDate"
+            value={form.expenseDate || ""}
+            onChange={handleChange}
+            className={fieldClass}
+            disabled={saving}
+            required
+          />
+        </div>
 
-                {/* Amount */}
+        {/* Amount */}
 
-                <div>
-                    <label
-                        className={
-                            labelClass
-                        }
-                    >
-                        Amount
-                    </label>
+        <div>
+          <label className={labelClass}>Amount</label>
 
-                    <input
-                        type="number"
-                        name="amount"
-                        value={form.amount}
-                        onChange={
-                            handleChange
-                        }
-                        min="0.01"
-                        step="0.01"
-                        placeholder="0.00"
-                        className={
-                            fieldClass
-                        }
-                        disabled={
-                            saving
-                        }
-                        required
-                    />
-                </div>
+          <input
+            type="number"
+            name="amount"
+            value={form.amount || ""}
+            onChange={handleChange}
+            min="0.01"
+            step="0.01"
+            placeholder="0.00"
+            className={fieldClass}
+            disabled={saving}
+            required
+          />
+        </div>
 
-                {/* Notes */}
+        {/* Notes */}
 
-                <div>
-                    <label
-                        className={
-                            labelClass
-                        }
-                    >
-                        Notes
-                    </label>
+        <div>
+          <label className={labelClass}>Notes</label>
 
-                    <textarea
-                        name="notes"
-                        value={
-                            form.notes
-                        }
-                        onChange={
-                            handleChange
-                        }
-                        rows={3}
-                        placeholder="Optional notes"
-                        className={
-                            fieldClass
-                        }
-                        disabled={
-                            saving
-                        }
-                    />
-                </div>
+          <textarea
+            name="notes"
+            value={form.notes || ""}
+            onChange={handleChange}
+            rows={3}
+            placeholder="Optional notes"
+            className={fieldClass}
+            disabled={saving}
+          />
+        </div>
 
-                {/* Actions */}
+        {/* Actions */}
 
-                <div className="flex justify-end gap-3 border-t pt-4">
+        <div className="flex justify-end gap-3 border-t pt-4">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            className="rounded-lg border px-5 py-2 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Cancel
+          </button>
 
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        disabled={saving}
-                        className="rounded-lg border px-5 py-2 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        Cancel
-                    </button>
-
-                    <button
-                        type="submit"
-                        disabled={saving}
-                        className="rounded-lg bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                        {saving
-                            ? "Saving..."
-                            : "Record Deductable"}
-                    </button>
-
-                </div>
-
-            </form>
-        </Modal>
-    );
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-lg bg-blue-600 px-5 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Record Deductable"}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
 }
