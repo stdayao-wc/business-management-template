@@ -9,105 +9,118 @@ import app from "@/app/config/app";
 import { login } from "@/services/auth";
 
 const fieldClass =
-  "w-full rounded-lg border px-3 py-2 outline-none transition focus:ring-2 focus:ring-blue-500";
+"w-full rounded-lg border px-3 py-2 outline-none transition focus:ring-2 focus:ring-blue-500";
 
 const buttonClass =
-  "w-full rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50";
+"flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50";
 
 export default function LoginPage() {
-  const router = useRouter();
+const router = useRouter();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState("");
 
-  async function handleSubmit(event) {
-    event.preventDefault();
+async function handleSubmit(event) {
+event.preventDefault();
 
-    try {
-      setLoading(true);
-      setError("");
 
-      await login(email, password);
+try {
+  setLoading(true);
+  setError("");
 
-      router.push("/");
-      router.refresh();
-    } catch (err) {
-      console.error(err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }
+  await login(email, password);
 
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-100">
-      <div className="w-full max-w-md rounded-xl bg-white p-8 shadow">
-        <div className="mb-6 flex justify-center">
-            <Logo
-                href={app.home}
-                src={app.logo.src}
-                alt={app.logo.alt}
-                title={app.name}
-                imageWidth={app.logo.width}
-                imageHeight={app.logo.height}
-            />
-        </div>
+  router.push("/");
+  router.refresh();
+} catch (err) {
+  console.error(err);
+  setError(err.message);
+} finally {
+  setLoading(false);
+}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Email
-            </label>
 
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              className={fieldClass}
-            />
-          </div>
+}
 
-          <div>
-            <label className="mb-2 block text-sm font-medium">
-              Password
-            </label>
+return ( <main className="flex min-h-screen items-center justify-center bg-gray-100"> <div className="w-full max-w-md rounded-xl bg-white p-8 shadow"> <div className="mb-6 flex justify-center"> <Logo
+         href={app.home}
+         src={app.logo.src}
+         alt={app.logo.alt}
+         title={app.name}
+         imageWidth={app.logo.width}
+         imageHeight={app.logo.height}
+       /> </div>
 
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              className={fieldClass}
-            />
-          </div>
 
-          {error && (
-            <p className="text-sm text-red-600">
-              {error}
-            </p>
-          )}
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div>
+        <label className="mb-2 block text-sm font-medium">
+          Email
+        </label>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={buttonClass}
-          >
-            {loading ? "Signing In..." : "Sign In"}
-          </button>
-          <div className="mt-6 text-center">
-            <Link
-                href="/signup"
-                className="text-sm text-blue-600 hover:text-blue-700"
-            >
-                Don't have an account? Sign Up
-            </Link>
-        </div>
-        </form>
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          className={fieldClass}
+        />
       </div>
-    </main>
-  );
+
+      <div>
+        <label className="mb-2 block text-sm font-medium">
+          Password
+        </label>
+
+        <input
+          type="password"
+          required
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          className={fieldClass}
+        />
+      </div>
+
+      {error && (
+        <p className="text-sm text-red-600">
+          {error}
+        </p>
+      )}
+
+      <button
+        type="submit"
+        disabled={loading}
+        className={buttonClass}
+      >
+        {loading ? (
+          <>
+            <span
+              className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+              aria-hidden="true"
+            />
+
+            <span>Signing In...</span>
+          </>
+        ) : (
+          "Sign In"
+        )}
+      </button>
+
+      <div className="mt-6 text-center">
+        <Link
+          href="/signup"
+          className="text-sm text-blue-600 hover:text-blue-700"
+        >
+          Don't have an account? Sign Up
+        </Link>
+      </div>
+    </form>
+  </div>
+</main>
+
+
+);
 }
